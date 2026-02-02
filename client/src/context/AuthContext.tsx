@@ -5,17 +5,7 @@ import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
-interface User {
-    _id: string;
-    name: string;
-    email: string;
-    role: 'student' | 'admin';
-    targetExam?: string;
-    language?: string;
-    avatar?: string;
-    selectedExam?: string; // Keeping for backward compat if needed
-    streak?: number;
-}
+import { User } from '@/types';
 
 interface AuthContextType {
     user: User | null;
