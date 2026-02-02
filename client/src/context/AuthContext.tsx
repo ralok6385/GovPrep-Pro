@@ -69,7 +69,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast.success('Account created successfully');
             router.push('/dashboard');
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Signup failed');
+            console.error('[Signup Error]:', error);
+            const message = error.response?.data?.message || error.message || 'Signup failed';
+            toast.error(message);
             throw error;
         }
     };

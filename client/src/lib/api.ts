@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api';
+console.log('[API Client] Base URL:', baseURL);
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
+    baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
