@@ -15,17 +15,26 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const server = http.createServer(app);
+// Socket.io with permissive CORS
 const io = new Server(server, {
     cors: {
-        origin: "*", // In production, specify the client URL
-        methods: ["GET", "POST"]
+        origin: "*",
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cors());
+
+// Permissive CORS for Express
+app.use(cors({
+    origin: '*', // Allow all origins (for debugging/initial deployment)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
 
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
