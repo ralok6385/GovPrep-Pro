@@ -12,6 +12,7 @@ export interface User {
     xp?: number;
     level?: number;
     badges?: string[];
+    selectedExam?: string | { _id: string };
 }
 
 export interface Subject {
