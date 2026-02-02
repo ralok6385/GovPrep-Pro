@@ -8,7 +8,7 @@ const contentSchema = mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ['video', 'pdf'],
+            enum: ['video', 'pdf', 'image'],
             required: true,
         },
         url: {
@@ -34,6 +34,6 @@ const contentSchema = mongoose.Schema(
     }
 );
 
-const Content = mongoose.model('Content', contentSchema);
+const Content = mongoose.models.Content || mongoose.model('Content', contentSchema);
 
 module.exports = Content;

@@ -5,11 +5,15 @@ const subjectSchema = mongoose.Schema(
         examId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Exam',
-            required: true,
+            required: false, // Changed to false to allow "Global/Common" subjects
         },
         name: {
             type: String,
             required: true, // e.g., "Quantitative Aptitude"
+        },
+        slug: {
+            type: String,
+            required: true,
         },
         topics: [
             {
@@ -23,6 +27,6 @@ const subjectSchema = mongoose.Schema(
     }
 );
 
-const Subject = mongoose.model('Subject', subjectSchema);
+const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
 
 module.exports = Subject;

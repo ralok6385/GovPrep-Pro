@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, MinusCircle, Trophy, Home } from 'lucide-react';
@@ -19,6 +20,7 @@ interface ResultData {
 }
 
 export default function ResultPage({ params }: { params: { id: string } }) {
+    const { user } = useAuth();
     const [result, setResult] = useState<ResultData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -86,7 +88,7 @@ export default function ResultPage({ params }: { params: { id: string } }) {
                 </div>
 
                 <div className="text-center">
-                    <Link href="/dashboard" className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold inline-flex items-center gap-2">
+                    <Link href={user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold inline-flex items-center gap-2">
                         <Home className="w-5 h-5" /> Back to Dashboard
                     </Link>
                 </div>

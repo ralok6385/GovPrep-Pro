@@ -1,0 +1,140 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { fetchContent, ContentItem } from '@/services/contentService';
+import { FileText, PlayCircle, Lock, Download, ExternalLink, Search } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
+export default function StudyMaterialPage() {
+    const [content, setContent] = useState<ContentItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        loadContent();
+    }, []);
+
+    const loadContent = async () => {
+        setLoading(true);
+        try {
+            const data = await fetchContent(undefined, 'pdf'); // Strictly PDF
+            setContent(data);
+        } catch (error) {
+            toast.error('Failed to load study material');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredContent = content.filter(item =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.topicName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return (
+        <div className="space-y-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Study Material</h1>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium">Download premium PDF notes for your preparation.</p>
+                </div>
+
+                {/* Search */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Search PDF topics..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-64 transition-colors shadow-sm"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Content Grid */}
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10 animate-pulse">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                        <div key={i} className="space-y-3">
+                            <div className="aspect-video bg-slate-200 rounded-xl w-full"></div>
+                            <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                            <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+                        </div>
+                    ))}
+                </div>
+            ) : filteredContent.length === 0 ? (
+                <div className="text-center py-20 text-gray-500">
+                    <p>No study material found matching your criteria.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">
+                    {filteredContent.map((item) => {
+                        return (
+                            <a
+                                key={item._id}
+                                href={item.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex flex-col gap-3"
+                            >
+                                {/* Thumbnail Area */}
+                                <div className="aspect-video w-full relative overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center">
+                                    <img
+                                        src={(item as any).thumbnail || `https://images.unsplash.com/photo-1515162305285-0293e4767cc2?q=80&w=800&auto=format&fit=crop`}
+                                        alt={item.title}
+                                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                                        onError={(e: any) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532102235608-dc8fc689c9ab?q=80&w=800&auto=format&fit=crop'; }}
+                                    />
+
+                                    {/* Icon Overlay (Subtle) */}
+                                    <div className="absolute inset-0 bg-emerald-950/20 group-hover:bg-emerald-950/40 transition-colors duration-300 flex items-center justify-center">
+                                        <div className="w-12 h-12 rounded-xl bg-emerald-500/90 text-white flex items-center justify-center scale-90 group-hover:scale-100 transition-all duration-300 shadow-xl border border-white/20">
+                                            <FileText className="w-6 h-6" />
+                                        </div>
+                                    </div>
+
+                                    {item.isPremium && (
+                                        <div className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-lg flex items-center gap-1">
+                                            <Lock className="w-2.5 h-2.5" /> PRO
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Content Area */}
+                                <div className="flex gap-3">
+                                    {/* Subject Icon / Avatar */}
+                                    <div className="w-9 h-9 rounded-full bg-emerald-50 dark:bg-emerald-900/30 shrink-0 flex items-center justify-center text-emerald-600 font-black text-[10px] border border-emerald-100 dark:border-emerald-800">
+                                        {(item.topicName || 'P').charAt(0)}
+                                    </div>
+
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-slate-800 dark:text-white text-sm leading-snug mb-1 line-clamp-2 group-hover:text-emerald-600 transition-colors">
+                                            {item.title}
+                                        </h3>
+
+                                        <div className="flex flex-col text-[12px] text-slate-500 dark:text-slate-400 font-medium">
+                                            <span className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                                                {item.topicName}
+                                            </span>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <span>PDF Notes</span>
+                                                <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span>
+                                                <span>
+                                                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Added Recently'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}

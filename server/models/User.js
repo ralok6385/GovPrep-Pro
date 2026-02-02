@@ -12,6 +12,10 @@ const userSchema = mongoose.Schema(
             required: true,
             unique: true,
         },
+        avatar: {
+            type: String, // URL to profile image
+            default: ''
+        },
         password: {
             type: String,
             required: true,
@@ -24,10 +28,44 @@ const userSchema = mongoose.Schema(
             enum: ['student', 'admin'],
             default: 'student',
         },
+        targetExam: {
+            type: String, // Dynamic exam name
+            default: ''
+        },
+        language: {
+            type: String,
+            enum: ['hi', 'en'],
+            default: 'hi' // Hindi-first
+        },
         selectedExam: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Exam',
+            ref: 'Exam'
         },
+        streak: {
+            type: Number,
+            default: 0
+        },
+        lastActiveDate: {
+            type: Date
+        },
+        xp: {
+            type: Number,
+            default: 0
+        },
+        level: {
+            type: Number,
+            default: 1
+        },
+        badges: [{
+            type: String
+        }],
+        lastLoginDate: {
+            type: Date
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false
+        }
     },
     {
         timestamps: true,
@@ -49,6 +87,6 @@ userSchema.pre('save', async function () {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 module.exports = User;

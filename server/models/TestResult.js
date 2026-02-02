@@ -32,6 +32,20 @@ const testResultSchema = mongoose.Schema(
             type: Date,
             default: Date.now,
         },
+        tabSwitchWarnings: {
+            type: Number,
+            default: 0,
+        },
+        isAutoSubmitted: {
+            type: Boolean,
+            default: false,
+        },
+        rank: {
+            type: Number,
+        },
+        totalParticipants: {
+            type: Number,
+        },
     },
     {
         timestamps: true,

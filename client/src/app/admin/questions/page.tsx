@@ -2,192 +2,190 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { toast } from 'react-hot-toast';
-import { Plus, Save } from 'lucide-react';
-
-interface Subject {
-    _id: string;
-    name: string;
-}
+import { Plus, Search, Filter, Trash2, Edit, UploadCloud, Clock } from 'lucide-react';
+import Link from 'next/link';
+import toast from 'react-hot-toast';
+import DeleteConfirmationModal from '@/components/Admin/DeleteConfirmationModal';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function QuestionsPage() {
-    // We need to fetch Subjects first to populate dropdown.
-    // But wait, getSubjects requires examId.
-    // Admin might need to select Exam -> Subject -> Add Question.
-    // For simplicity, I will first fetch all exams, then subjects.
-    // Or I assume I pass subjectId manually or simplify.
-    // I'll make a two-step selector: Select Exam -> Select Subject.
-
-    const [exams, setExams] = useState<any[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-
-    const [selectedExam, setSelectedExam] = useState('');
-    const [selectedSubject, setSelectedSubject] = useState('');
-
-    const [formData, setFormData] = useState({
-        text: '',
-        optionA: '',
-        optionB: '',
-        optionC: '',
-        optionD: '',
-        correctOption: 'A',
-        explanation: '',
-        difficulty: 'medium'
-    });
-
-    const [loading, setLoading] = useState(false);
+    const [questions, setQuestions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
 
     useEffect(() => {
-        api.get('/exams').then(res => setExams(res.data));
+        fetchQuestions();
     }, []);
 
-    useEffect(() => {
-        if (selectedExam) {
-            api.get(`/exams/${selectedExam}/subjects`).then(res => setSubjects(res.data));
-        }
-    }, [selectedExam]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedSubject) return toast.error('Please select a subject');
-        setLoading(true);
-
+    const fetchQuestions = async () => {
         try {
-            const payload = {
-                text: formData.text,
-                options: [
-                    { id: 'A', text: formData.optionA },
-                    { id: 'B', text: formData.optionB },
-                    { id: 'C', text: formData.optionC },
-                    { id: 'D', text: formData.optionD },
-                ],
-                correctOption: formData.correctOption,
-                explanation: formData.explanation,
-                subjectId: selectedSubject,
-                difficulty: formData.difficulty
-            };
-
-            await api.post('/questions', payload);
-            toast.success('Question added successfully!');
-            // Reset form usually
-            setFormData({
-                ...formData,
-                text: '',
-                optionA: '',
-                optionB: '',
-                optionC: '',
-                optionD: '',
-                explanation: ''
-            });
+            const { data } = await api.get('/questions');
+            setQuestions(data);
         } catch (error) {
-            toast.error('Failed to add question');
+            console.error('Failed to load questions', error);
         } finally {
             setLoading(false);
         }
     };
 
+    const isNew = (date: string) => {
+        const added = new Date(date).getTime();
+        const now = new Date().getTime();
+        return (now - added) < (24 * 60 * 60 * 1000); // 24 hours
+    };
+
+    const handleDelete = (id: string) => {
+        setShowDeleteModal(id);
+    };
+
+    const confirmDelete = async () => {
+        if (!showDeleteModal) return;
+        try {
+            await api.delete(`/questions/${showDeleteModal}`);
+            setQuestions(prev => prev.filter(q => q._id !== showDeleteModal));
+            toast.success('Question deleted');
+            setShowDeleteModal(null);
+        } catch (error) {
+            toast.error('Failed to delete question');
+        }
+    };
+
+    const filteredQuestions = questions.filter(q =>
+        q.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.subjectId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
-        <div className="max-w-3xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Add New Question</h1>
-
-            <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8">
-                <label className="block text-gray-400 text-sm mb-2">Category Selection</label>
-                <div className="grid grid-cols-2 gap-4">
-                    <select
-                        className="bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                        value={selectedExam}
-                        onChange={(e) => setSelectedExam(e.target.value)}
-                    >
-                        <option value="">Select Exam</option>
-                        {exams.map(e => <option key={e._id} value={e._id}>{e.name}</option>)}
-                    </select>
-
-                    <select
-                        className="bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                        value={selectedSubject}
-                        onChange={(e) => setSelectedSubject(e.target.value)}
-                        disabled={!selectedExam}
-                    >
-                        <option value="">Select Subject</option>
-                        {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-                    </select>
+        <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-20px)] flex flex-col">
+            <DeleteConfirmationModal
+                isOpen={!!showDeleteModal}
+                onClose={() => setShowDeleteModal(null)}
+                onConfirm={confirmDelete}
+                title="Delete Question?"
+                description="Are you sure you want to delete this question? This action cannot be undone."
+            />
+            <div className="flex justify-between items-center mb-6 shrink-0">
+                <div>
+                    <div className="flex items-center gap-3 mb-1">
+                        <h1 className="text-2xl font-bold text-slate-800">Question Bank</h1>
+                        {questions.filter(q => isNew(q.createdAt)).length > 0 && (
+                            <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full animate-bounce shadow-lg shadow-indigo-500/30">
+                                {questions.filter(q => isNew(q.createdAt)).length} NEW TODAY
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-slate-500 text-sm font-medium">Manage all your practice questions here.</p>
+                </div>
+                <div className="flex gap-3">
+                    <Link href="/admin/questions/upload" className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-50 transition-colors font-medium">
+                        <UploadCloud className="w-4 h-4" /> Bulk Upload
+                    </Link>
+                    <Link href="/admin/questions/add" className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors font-bold shadow-lg shadow-indigo-500/20">
+                        <Plus className="w-4 h-4" /> Add Question
+                    </Link>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-slate-800 p-8 rounded-2xl border border-slate-700 space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Question Text (HTML supported)</label>
-                    <textarea
-                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-4 text-white focus:ring-2 focus:ring-indigo-500 outline-none min-h-[100px]"
-                        placeholder="e.g. What is the capital of India?"
-                        value={formData.text}
-                        onChange={e => setFormData({ ...formData, text: e.target.value })}
-                        required
+            {/* Config / Filters Row */}
+            <div className="flex gap-4 mb-6 shrink-0">
+                <div className="flex-1 relative">
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search questions by text or subject..."
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                <button className="bg-white px-4 py-3 rounded-xl border border-slate-200 flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-medium">
+                    <Filter className="w-5 h-5" /> Filters
+                </button>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['A', 'B', 'C', 'D'].map((opt) => (
-                        <div key={opt}>
-                            <label className="block text-xs font-medium text-gray-400 mb-1">Option {opt}</label>
-                            <input
-                                type="text"
-                                className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                //@ts-ignore
-                                value={formData[`option${opt}`]}
-                                //@ts-ignore
-                                onChange={e => setFormData({ ...formData, [`option${opt}`]: e.target.value })}
-                                required
-                            />
+            {/* Questions Table/List */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex-1 overflow-hidden flex flex-col">
+                <div className="overflow-y-auto flex-1 p-2">
+                    {loading ? (
+                        <div className="text-center py-20 text-slate-400">Loading Question Bank...</div>
+                    ) : filteredQuestions.length === 0 ? (
+                        <div className="text-center py-20 text-slate-400">
+                            No questions found. Try adding some!
                         </div>
-                    ))}
+                    ) : (
+                        <table className="w-full text-left border-separate border-spacing-0">
+                            <thead className="bg-slate-50/50 text-slate-500 text-[10px] uppercase font-black tracking-widest sticky top-0 z-10 backdrop-blur-md">
+                                <tr>
+                                    <th className="p-4 border-b border-slate-100 rounded-tl-xl">Question Text</th>
+                                    <th className="p-4 border-b border-slate-100">Subject & Topic</th>
+                                    <th className="p-4 border-b border-slate-100">Difficulty</th>
+                                    <th className="p-4 border-b border-slate-100 text-indigo-600">Added</th>
+                                    <th className="p-4 border-b border-slate-100 text-right rounded-tr-xl">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredQuestions.map((q) => (
+                                    <tr key={q._id} className="hover:bg-slate-50/80 group transition-all">
+                                        <td className="p-4 w-1/3">
+                                            <div className="flex items-start gap-2">
+                                                {isNew(q.createdAt) && (
+                                                    <span className="shrink-0 bg-indigo-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md mt-1 animate-pulse tracking-tighter">NEW</span>
+                                                )}
+                                                <p className="font-bold text-slate-800 text-sm line-clamp-2 leading-snug">{q.text}</p>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <p className="font-black text-[10px] uppercase tracking-widest text-indigo-500 bg-indigo-50/50 inline-block px-2.5 py-1 rounded-full border border-indigo-100 mb-1.5">
+                                                {q.subjectId?.name || 'Uncategorized'}
+                                            </p>
+                                            <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                                {q.topic || 'General Topic'}
+                                            </p>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm
+                                                ${q.difficulty === 'hard' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                                    q.difficulty === 'medium' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                        'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                                                {q.difficulty || 'Easy'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                                                    <Clock className="w-3 h-3 text-slate-400" />
+                                                    {formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })}
+                                                </span>
+                                                <span className="text-[9px] text-slate-400 font-medium">
+                                                    {new Date(q.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                                <Link href={`/admin/questions/add?edit=${q._id}`} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-xl transition-all block">
+                                                    <Edit className="w-4 h-4" />
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(q._id)}
+                                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 rounded-xl transition-all"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Correct Option</label>
-                        <select
-                            className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={formData.correctOption}
-                            onChange={e => setFormData({ ...formData, correctOption: e.target.value })}
-                        >
-                            {['A', 'B', 'C', 'D'].map(o => <option key={o} value={o}>Option {o}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Difficulty</label>
-                        <select
-                            className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            value={formData.difficulty}
-                            onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
-                        >
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                        </select>
-                    </div>
+                <div className="p-4 border-t bg-slate-50 text-xs text-slate-500 flex justify-between">
+                    <span>Showing {filteredQuestions.length} questions</span>
+                    <span>Page 1 of 1</span>
                 </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Explanation</label>
-                    <textarea
-                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-4 text-white focus:ring-2 focus:ring-indigo-500 outline-none min-h-[80px]"
-                        placeholder="Explain why the answer is correct..."
-                        value={formData.explanation}
-                        onChange={e => setFormData({ ...formData, explanation: e.target.value })}
-                    />
-                </div>
-
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-transform hover:scale-[1.02] flex items-center justify-center gap-2"
-                    >
-                        {loading ? 'Saving...' : <><Save className="w-5 h-5" /> Save Question</>}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 }

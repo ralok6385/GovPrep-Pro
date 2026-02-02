@@ -6,19 +6,40 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "seed": "node seeder.js"
+    "seed": "node seeder.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "adm-zip": "^0.5.16",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "docx-pdf": "^0.0.1",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "google-translate-api-x": "^10.7.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.1.5",
-    "nodemon": "^3.1.11"
+    "mammoth": "^1.11.0",
+    "mongoose": "^8.10.0",
+    "multer": "^2.0.2",
+    "nodemon": "^3.1.11",
+    "openai": "^6.16.0",
+    "pdf-parse": "^1.1.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "string-strip-html": "^13.5.3",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.0.1",
+    "supertest": "^7.2.2",
+    "vitest": "^4.0.18"
   }
 }

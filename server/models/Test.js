@@ -11,6 +11,11 @@ const testSchema = mongoose.Schema(
             ref: 'Exam',
             required: true,
         },
+        type: {
+            type: String,
+            enum: ['quiz', 'exam', 'practice'],
+            default: 'exam'
+        },
         durationMinutes: {
             type: Number,
             required: true,
@@ -43,6 +48,6 @@ const testSchema = mongoose.Schema(
     }
 );
 
-const Test = mongoose.model('Test', testSchema);
+const Test = mongoose.models.Test || mongoose.model('Test', testSchema);
 
 module.exports = Test;

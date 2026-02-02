@@ -10,7 +10,11 @@ interface User {
     name: string;
     email: string;
     role: 'student' | 'admin';
-    selectedExam?: string;
+    targetExam?: string;
+    language?: string;
+    avatar?: string;
+    selectedExam?: string; // Keeping for backward compat if needed
+    streak?: number;
 }
 
 interface AuthContextType {
@@ -20,6 +24,8 @@ interface AuthContextType {
     signup: (data: any) => Promise<void>;
     logout: () => void;
     checkAuth: () => Promise<void>;
+    updateProfile: (data: any) => Promise<void>;
+    uploadProfileImage: (file: File) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         try {
-            const { data } = await api.get('/auth/me');
+            const { data } = await api.get('/auth/profile');
             setUser(data);
         } catch (error) {
             console.error('Auth check failed', error);
@@ -78,15 +84,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const updateProfile = async (userData: any) => {
+        try {
+            const { data } = await api.put('/auth/profile', userData);
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+            setUser(data);
+            toast.success('Profile updated successfully');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Update failed');
+            throw error;
+        }
+    };
+
+    const uploadProfileImage = async (file: File) => {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const { data } = await api.put('/auth/profile/avatar', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
+            setUser(data);
+            toast.success('Profile picture updated');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Image upload failed');
+            throw error;
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
-        router.push('/login');
+        router.replace('/login');
         toast.success('Logged out');
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, signup, logout, checkAuth }}>
+        <AuthContext.Provider value={{ user, loading, login, signup, logout, checkAuth, updateProfile, uploadProfileImage }}>
             {children}
         </AuthContext.Provider>
     );

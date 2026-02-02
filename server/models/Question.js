@@ -4,12 +4,16 @@ const questionSchema = mongoose.Schema(
     {
         text: {
             type: String,
-            required: true, // HTML supported
+            required: true, // HTML supported In English
+        },
+        textHindi: {
+            type: String, // Optional Hindi Text
         },
         options: [
             {
                 id: { type: String, required: true }, // "A", "B", "C", "D"
                 text: { type: String, required: true },
+                textHindi: { type: String }, // Optional Hindi Option
             },
         ],
         correctOption: {
@@ -17,6 +21,9 @@ const questionSchema = mongoose.Schema(
             required: true, // "B"
         },
         explanation: {
+            type: String,
+        },
+        explanationHindi: {
             type: String,
         },
         subjectId: {
@@ -34,6 +41,6 @@ const questionSchema = mongoose.Schema(
     }
 );
 
-const Question = mongoose.model('Question', questionSchema);
+const Question = mongoose.models.Question || mongoose.model('Question', questionSchema);
 
 module.exports = Question;

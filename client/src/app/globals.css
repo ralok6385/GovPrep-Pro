@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant warm (&:where(.warm, .warm *));
+
 :root {
+  /* Default Light Mode - Optimized for Clarity */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  /* Slate 900 for better contrast */
 }
 
 @theme inline {
@@ -14,13 +19,41 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    /* Deep Slate 950 */
+    --foreground: #f8fafc;
+    /* Slate 50 */
   }
+}
+
+/* Warm Mode - "Reading Mode" */
+.warm {
+  --background: #fdf0d5;
+  /* Deeper Sepia / Cream */
+  --foreground: #4a3b32;
+  /* Rich Dark Brown */
+}
+
+/* Force Dark Mode Override (for manual toggle) */
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Smooth Theme Transition */
+}
+
+/* Hide Next.js Dev Indicators */
+[portal-nextjs-indicator],
+#__next-build-watcher,
+.nextjs-static-indicator-container,
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
