@@ -26,12 +26,12 @@ export default function LeaderboardTicker() {
     if (loading || topStudents.length === 0) return null;
 
     return (
-        <div className="w-full bg-slate-900 border-y border-slate-800 py-2 overflow-hidden flex items-center mb-6 relative">
+        <div className="w-full bg-slate-900 border-y border-slate-800 py-2 overflow-hidden flex items-center mb-6 relative max-w-full">
             <div className="bg-amber-500/10 text-amber-500 text-xs font-bold px-3 py-1 rounded ml-4 absolute left-0 z-20 backdrop-blur-sm border border-amber-500/20 flex items-center gap-1">
                 <Crown className="w-3 h-3" /> CHAMPIONS
             </div>
 
-            <div className="animate-marquee whitespace-nowrap flex items-center gap-12 pl-32">
+            <div className="flex items-center gap-12 pl-32 animate-[marquee_20s_linear_infinite] whitespace-nowrap">
                 {topStudents.map((student, i) => (
                     <div key={student._id} className="flex items-center gap-2 text-sm text-slate-300">
                         <span className="font-bold text-slate-500">#{i + 1}</span>
@@ -51,7 +51,7 @@ export default function LeaderboardTicker() {
                     </div>
                 ))}
 
-                {/* Duplicate for seamless loop if needed, though simple css animation usually needs duplication */}
+                {/* Duplicate for loop */}
                 {topStudents.map((student, i) => (
                     <div key={`dup-${student._id}`} className="flex items-center gap-2 text-sm text-slate-300">
                         <span className="font-bold text-slate-500">#{i + 1}</span>
@@ -73,9 +73,6 @@ export default function LeaderboardTicker() {
             </div>
 
             <style jsx>{`
-                .animate-marquee {
-                    animation: marquee 20s linear infinite;
-                }
                 @keyframes marquee {
                     0% { transform: translateX(0); }
                     100% { transform: translateX(-50%); }

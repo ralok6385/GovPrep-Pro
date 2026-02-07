@@ -566,33 +566,38 @@ export default function LiveTestPage() {
                         <div className="flex gap-2">
                             <button
                                 onClick={handleMarkForReview}
-                                className="hidden md:flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded hover:bg-slate-100 text-sm"
+                                className="flex items-center px-3 md:px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded hover:bg-slate-100 text-sm gap-2"
+                                title="Mark for Review"
                             >
-                                {markedReview[currentQ._id] ? 'Unmark' : 'Mark for Review'}
+                                <div className={`w-3 h-3 rounded-full border-2 ${markedReview[currentQ._id] ? 'bg-purple-600 border-purple-600' : 'border-slate-400'}`}></div>
+                                <span className="hidden md:inline">{markedReview[currentQ._id] ? 'Unmark' : 'Review'}</span>
                             </button>
                             <button
                                 onClick={handleClearResponse}
-                                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded hover:bg-slate-100 text-sm"
+                                className="px-3 md:px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded hover:bg-slate-100 text-sm"
+                                title="Clear Response"
                             >
-                                Clear Response
+                                <span className="hidden md:inline">Clear</span>
+                                <span className="md:hidden">✕</span>
                             </button>
                         </div>
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handlePrev}
-                                disabled={currentQIndex === 0}
-                                className="px-5 py-2 bg-slate-200 text-slate-600 font-bold rounded hover:bg-slate-300 disabled:opacity-50 text-sm"
-                            >
-                                Previous
-                            </button>
-                            <button
-                                onClick={handleSaveAndNext}
-                                className="px-6 py-2 bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700 shadow text-sm"
-                            >
-                                Save & Next
-                            </button>
-                        </div>
+                        <button
+                            onClick={handlePrev}
+                            disabled={currentQIndex === 0}
+                            className="px-5 py-2 bg-slate-200 text-slate-600 font-bold rounded hover:bg-slate-300 disabled:opacity-50 text-sm flex items-center gap-2"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="hidden md:inline">Previous</span>
+                        </button>
+                        <button
+                            onClick={handleSaveAndNext}
+                            className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700 shadow text-sm flex items-center gap-2"
+                        >
+                            <span className="hidden md:inline">Save & Next</span>
+                            <span className="md:hidden">Next</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 </main>
 

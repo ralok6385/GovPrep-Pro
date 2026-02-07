@@ -207,7 +207,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Main Content Wrapper */}
-            <div className="lg:pl-64 min-h-screen transition-all">
+            <div className="lg:pl-64 min-h-screen transition-all pb-20 lg:pb-0">
                 {children}
             </div>
 

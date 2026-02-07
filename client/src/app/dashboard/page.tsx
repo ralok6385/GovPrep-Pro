@@ -78,7 +78,7 @@ export default function Dashboard() {
 
 
     return (
-        <div className="max-w-7xl mx-auto p-5 pb-24 lg:p-8 lg:pb-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="max-w-7xl mx-auto p-4 pb-24 lg:p-8 lg:pb-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
             {/* CENTER COLUMN (Main Content) */}
             <div className="lg:col-span-8 space-y-6 pt-16 lg:pt-0">
