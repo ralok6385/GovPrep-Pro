@@ -52,7 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <NavItem href="/admin/content/add" icon={UploadCloud} label="Content Upload" pathname={pathname} />
                     <NavItem href="/admin/exams" icon={BookOpen} label="Exam Database" pathname={pathname} />
                     <NavItem href="/admin/subjects" icon={LayoutDashboard} label="Subject Map" pathname={pathname} />
-                    <NavItem href="/admin/videos" icon={PlaySquare} label="Video Tutorials" pathname={pathname} />
+                    <NavItem href="/admin/content" icon={PlaySquare} label="Content Library" pathname={pathname} />
                     <NavItem href="/admin/questions" icon={FileQuestion} label="Question Engine" pathname={pathname} />
                     <NavItem href="/admin/tests" icon={FileText} label="Manage Tests" pathname={pathname} />
 

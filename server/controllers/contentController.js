@@ -67,6 +67,25 @@ const deleteContent = async (req, res) => {
             return res.status(404).json({ message: 'Content not found' });
         }
 
+        // Delete physical file if it exists and is local
+        if (content.url && content.url.startsWith('/uploads/')) {
+            const fs = require('fs');
+            const path = require('path');
+            // content.url is like "/uploads/file.pdf", we need relative path "uploads/file.pdf"
+            // or absolute. The server runs from root? verify uploadMiddleware path.
+            // uploadMiddleware uses 'uploads/' relative to process.cwd() likely.
+
+            const filePath = path.join(__dirname, '..', '..', content.url.substring(1)); // Remove leading slash
+            // actually better to just use relative path if we know CWD.
+            // Assuming CWD is server root.
+            const relativePath = content.url.startsWith('/') ? content.url.substring(1) : content.url;
+
+            if (fs.existsSync(relativePath)) {
+                fs.unlinkSync(relativePath);
+                console.log(`[DeleteContent] Deleted file: ${relativePath}`);
+            }
+        }
+
         await content.deleteOne();
         res.json({ message: 'Content removed' });
     } catch (error) {

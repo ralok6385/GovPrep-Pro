@@ -319,67 +319,75 @@ const submitTest = async (req, res) => {
 // @access  Private/Admin
 const getAllResults = async (req, res) => {
     try {
-        let results = await TestResult.find({})
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+        const { search, testId } = req.query;
+
+        // Build Query
+        const query = {};
+
+        if (testId && testId !== 'all') {
+            query.testId = testId;
+        }
+
+        // If search provided, find matching users first
+        if (search) {
+            const User = require('../models/User');
+            const userQuery = {
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { email: { $regex: search, $options: 'i' } }
+                ]
+            };
+            const students = await User.find(userQuery).select('_id');
+            const studentIds = students.map(u => u._id);
+
+            if (studentIds.length === 0) {
+                return res.json({
+                    totalTests: 0,
+                    avgScore: 0,
+                    totalPages: 0,
+                    currentPage: page,
+                    results: []
+                });
+            }
+            query.studentId = { $in: studentIds };
+        }
+
+        const totalTests = await TestResult.countDocuments(query);
+
+        // Use aggregation to calculate average score efficiently
+        const stats = await TestResult.aggregate([
+            { $match: query },
+            {
+                $group: {
+                    _id: null,
+                    avgScore: { $avg: '$score' }
+                }
+            }
+        ]);
+        const avgScore = stats.length > 0 ? stats[0].avgScore.toFixed(1) : 0;
+
+        // Fetch paginated results
+        const results = await TestResult.find(query)
             .populate('studentId', 'name email')
-            .populate('testId', 'title totalMarks')
+            .populate('testId', 'title totalMarks type')
             .sort({ createdAt: -1 })
-            .lean(); // Use lean for performance and modification
-
-        // Calculate Rank for each result dynamically
-        // Naive approach: For each result, count how many others in same test have higher score.
-        // Optimization: Group by testId, sort, assign rank.
-
-        // Let's populate rank manually
-        // 1. Group results by TestID
-        // Populate Rank manually
-        const resultsByTest = {};
-        const allTestResults = await TestResult.find({}, 'testId score').lean();
-
-        allTestResults.forEach(r => {
-            if (r.testId) {
-                const tId = r.testId.toString(); // Ensure string key
-                if (!resultsByTest[tId]) resultsByTest[tId] = [];
-                resultsByTest[tId].push(r.score);
-            }
-        });
-
-        // Sort scores for each test
-        Object.keys(resultsByTest).forEach(tId => {
-            resultsByTest[tId].sort((a, b) => b - a);
-        });
-
-        // Assign rank with safety checks
-        results = results.map(r => {
-            if (!r.testId) {
-                return { ...r, rank: 0 }; // Handle deleted exams
-            }
-            const tId = r.testId._id.toString();
-            const testScores = resultsByTest[tId] || [];
-
-            // Rank = index of first score >= my score + 1
-            const rank = testScores.indexOf(r.score) + 1;
-            return { ...r, rank };
-        });
-
-        const totalTests = results.length;
-        const avgScore = totalTests > 0
-            ? results.reduce((acc, curr) => acc + (curr.score || 0), 0) / totalTests // Safeguard score
-            : 0;
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         res.json({
             totalTests,
-            avgScore: avgScore.toFixed(1),
-            results: results.slice(0, 50) // Limit to last 50 for table
+            avgScore,
+            totalPages: Math.ceil(totalTests / limit),
+            currentPage: page,
+            results
         });
     } catch (error) {
-        console.error('[GetAllResults Error] Full Crash:', error);
-        console.error(error.stack);
-        // Return empty structure instead of 500
-        res.json({
-            totalTests: 0,
-            avgScore: '0.0',
-            results: []
-        });
+        console.error('[GetAllResults Error]:', error);
+        res.status(500).json({ message: 'Server Error fetching results' });
     }
 };
 

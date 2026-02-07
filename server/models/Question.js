@@ -41,6 +41,11 @@ const questionSchema = mongoose.Schema(
     }
 );
 
+// Add Indexes for Performance
+questionSchema.index({ subjectId: 1 });
+questionSchema.index({ difficulty: 1 });
+questionSchema.index({ subjectId: 1, difficulty: 1 }); // Compond for random sampling
+
 const Question = mongoose.models.Question || mongoose.model('Question', questionSchema);
 
 module.exports = Question;

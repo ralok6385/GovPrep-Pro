@@ -11,6 +11,11 @@ export default function ResultsPage() {
     const [loading, setLoading] = useState(true);
 
     // Filtering State
+    // Pagination State
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    // Filter State
     const [searchQuery, setSearchQuery] = useState('');
     const [testFilter, setTestFilter] = useState('all');
 
@@ -29,13 +34,22 @@ export default function ResultsPage() {
     const [reviewLoading, setReviewLoading] = useState(false);
 
     useEffect(() => {
-        fetchResults();
-    }, []);
+        const timeoutId = setTimeout(() => {
+            fetchResults();
+        }, 500); // Debounce search
+        return () => clearTimeout(timeoutId);
+    }, [page, searchQuery, testFilter]);
 
     const fetchResults = async () => {
+        setLoading(true);
         try {
-            const { data } = await api.get('/tests/results/all');
+            const params: any = { page, limit: 15 };
+            if (searchQuery) params.search = searchQuery;
+            if (testFilter !== 'all') params.testId = testFilter;
+
+            const { data } = await api.get('/tests/results/all', { params });
             setStats(data);
+            setTotalPages(data.totalPages);
         } catch (error) {
             console.error('Failed to fetch results', error);
             toast.error('Failed to load results');
@@ -44,6 +58,7 @@ export default function ResultsPage() {
         }
     };
 
+    // ... (keep fetchReview, handleDelete, confirmDelete, startEdit, saveEdit) ...
     const fetchReview = async (id: string) => {
         setReviewId(id);
         setReviewLoading(true);
@@ -97,18 +112,19 @@ export default function ResultsPage() {
         }
     };
 
-    // Derived State for Filtering
-    const filteredResults = stats?.results?.filter((r: any) => {
-        const matchesSearch = (r.studentId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (r.studentId?.email || '').toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesTest = testFilter === 'all' || r.testId?.title === testFilter;
-        return matchesSearch && matchesTest;
-    }) || [];
+    // Use results directly from API
+    const filteredResults = stats?.results || [];
 
-    // Unique Test Titles for Filter
-    const uniqueTests = Array.from(new Set(stats?.results?.map((r: any) => r.testId?.title).filter(Boolean))) as string[];
+    // Note: We lost 'uniqueTests' from full data. We need to fetch it.
+    // For now, I'll comment out the dynamic options or fetch them.
+    // Let's add a separate effect to fetch available tests for the filter.
+    const [availableTests, setAvailableTests] = useState<any[]>([]);
+    useEffect(() => {
+        api.get('/tests').then(({ data }) => setAvailableTests(data)).catch(() => { });
+    }, []);
 
-    if (loading) {
+
+    if (loading && !stats) { // Only full screen load on first fetch
         return (
             <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center justify-center">
                 <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -117,7 +133,7 @@ export default function ResultsPage() {
         );
     }
 
-    if (!stats) return <div className="p-8 text-center bg-slate-50 min-h-screen pt-20 font-bold text-slate-400">Failed to connect to analytics server.</div>;
+    if (!stats && !loading) return <div className="p-8 text-center bg-slate-50 min-h-screen pt-20 font-bold text-slate-400">Failed to connect to analytics server.</div>;
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8 pb-32">
@@ -141,7 +157,7 @@ export default function ResultsPage() {
                     </div>
                     <div>
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Total Attempts</p>
-                        <p className="text-3xl font-black text-slate-800">{stats.totalTests}</p>
+                        <p className="text-3xl font-black text-slate-800">{stats?.totalTests || 0}</p>
                     </div>
                 </div>
 
@@ -151,7 +167,7 @@ export default function ResultsPage() {
                     </div>
                     <div>
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Avg. Score</p>
-                        <p className="text-3xl font-black text-slate-800">{stats.avgScore}</p>
+                        <p className="text-3xl font-black text-slate-800">{stats?.avgScore || 0}</p>
                     </div>
                 </div>
 
@@ -162,7 +178,7 @@ export default function ResultsPage() {
                     <div>
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Last Activity</p>
                         <p className="text-xl font-black text-slate-800">
-                            {stats.results.length > 0 ? new Date(stats.results[0].createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
+                            {filteredResults.length > 0 ? new Date(filteredResults[0].createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
                         </p>
                     </div>
                 </div>
@@ -181,7 +197,7 @@ export default function ResultsPage() {
                                 type="text"
                                 placeholder="Search student..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
                                 className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none w-48 transition-all"
                             />
                         </div>
@@ -189,12 +205,12 @@ export default function ResultsPage() {
                         {/* Exam Filter */}
                         <select
                             value={testFilter}
-                            onChange={(e) => setTestFilter(e.target.value)}
-                            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer"
+                            onChange={(e) => { setTestFilter(e.target.value); setPage(1); }}
+                            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer max-w-[200px]"
                         >
                             <option value="all">All Exams</option>
-                            {uniqueTests.map(title => (
-                                <option key={title} value={title}>{title}</option>
+                            {availableTests.map((t: any) => (
+                                <option key={t._id} value={t._id}>{t.title}</option>
                             ))}
                         </select>
                     </div>
@@ -212,7 +228,14 @@ export default function ResultsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filteredResults.map((result: any) => (
+                            {loading && (
+                                <tr>
+                                    <td colSpan={5} className="px-8 py-10 text-center">
+                                        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                    </td>
+                                </tr>
+                            )}
+                            {!loading && filteredResults.map((result: any) => (
                                 <tr key={result._id} className="hover:bg-slate-50/80 transition-colors group">
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
@@ -250,7 +273,7 @@ export default function ResultsPage() {
                                             </div>
                                             <div>
                                                 <p className="text-[10px] font-black text-slate-300 uppercase leading-none mb-1">Accuracy</p>
-                                                <span className="text-xs font-black text-slate-600">{Math.round(result.accuracy)}%</span>
+                                                <span className="text-xs font-black text-slate-600">{Math.round(result.accuracy || 0)}%</span>
                                             </div>
                                         </div>
                                     </td>
@@ -266,7 +289,7 @@ export default function ResultsPage() {
                                         )}
                                     </td>
                                     <td className="px-8 py-4">
-                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
                                                 onClick={() => fetchReview(result._id)}
                                                 className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-all hover:scale-110" title="Review Incorrect Questions"
@@ -289,7 +312,7 @@ export default function ResultsPage() {
                                     </td>
                                 </tr>
                             ))}
-                            {filteredResults.length === 0 && (
+                            {!loading && filteredResults.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="px-8 py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
@@ -303,6 +326,29 @@ export default function ResultsPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="px-8 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+                    <p className="text-xs font-bold text-slate-400">
+                        Page {page} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            disabled={page === 1}
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all"
+                        >
+                            Previous
+                        </button>
+                        <button
+                            disabled={page >= totalPages}
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
 

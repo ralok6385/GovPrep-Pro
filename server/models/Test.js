@@ -48,6 +48,10 @@ const testSchema = mongoose.Schema(
     }
 );
 
+// Add Indexes for Performance
+testSchema.index({ examId: 1 });
+testSchema.index({ isPublished: 1 });
+
 const Test = mongoose.models.Test || mongoose.model('Test', testSchema);
 
 module.exports = Test;

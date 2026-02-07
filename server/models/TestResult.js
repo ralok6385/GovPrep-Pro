@@ -52,6 +52,12 @@ const testResultSchema = mongoose.Schema(
     }
 );
 
+// Add Indexes for Performance
+testResultSchema.index({ studentId: 1 });
+testResultSchema.index({ testId: 1 });
+testResultSchema.index({ score: -1 });
+testResultSchema.index({ testId: 1, score: -1 }); // For Leaderboards
+
 const TestResult = mongoose.model('TestResult', testResultSchema);
 
 module.exports = TestResult;
