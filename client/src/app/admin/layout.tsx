@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, FileQuestion, BookOpen, LogOut, ShieldAlert, Settings, Users, PlaySquare, FileText, BarChart2, Briefcase, UploadCloud } from 'lucide-react';
 import clsx from 'clsx';
@@ -13,6 +13,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter();
     const pathname = usePathname();
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     useEffect(() => {
         if (!loading) {
             if (!user || user.role !== 'admin') {
@@ -21,26 +23,67 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [user, loading, router]);
 
+    // Close sidebar on route change (mobile)
+    useEffect(() => {
+        setIsSidebarOpen(false);
+    }, [pathname]);
+
     if (loading || !user || user.role !== 'admin') return <div className="min-h-screen bg-white flex items-center justify-center text-indigo-600 font-medium">Verifying Admin Access...</div>;
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 warm:bg-[var(--background)] text-slate-800 dark:text-slate-100 warm:text-[var(--foreground)] font-sans transition-colors duration-300">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950 warm:bg-[var(--background)] text-slate-800 dark:text-slate-100 warm:text-[var(--foreground)] font-sans transition-colors duration-300 overflow-hidden">
+            {/* Mobile Header */}
+            <header className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 warm:bg-[#fdf0d5] border-b border-slate-200 dark:border-slate-800 z-30 flex items-center justify-between px-4">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    >
+                        <LayoutDashboard className="w-6 h-6 text-indigo-600" />
+                    </button>
+                    <span className="font-black text-lg text-slate-800 dark:text-white">Admin Portal</span>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center border border-indigo-200">
+                    <span className="text-indigo-700 font-bold text-xs">{user.name?.[0]}</span>
+                </div>
+            </header>
+
+            {/* Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm animate-in fade-in"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-72 bg-white dark:bg-slate-900 warm:bg-[#fdf0d5] border-r border-slate-200 dark:border-slate-800 warm:border-stone-200 flex flex-col shadow-2xl z-20 overflow-hidden relative transition-colors duration-300">
+            <aside className={`
+                fixed lg:static inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 warm:bg-[#fdf0d5] border-r border-slate-200 dark:border-slate-800 warm:border-stone-200 flex flex-col shadow-2xl transition-transform duration-300
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}>
                 {/* Decorative Background Glows */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
 
-                <div className="p-8 pb-10 flex items-center gap-3 relative z-10">
-                    <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/20">
-                        <ShieldAlert className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <span className="font-black text-xl tracking-tight block leading-none text-slate-800 dark:text-white warm:text-[var(--foreground)]">Admin Portal</span>
-                        <div className="flex items-center gap-1.5 mt-1">
-                            <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 warm:text-stone-500 font-black tracking-widest uppercase">GovPrep Pro</span>
+                <div className="p-8 pb-10 flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-500/20">
+                            <ShieldAlert className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <span className="font-black text-xl tracking-tight block leading-none text-slate-800 dark:text-white warm:text-[var(--foreground)]">Admin Portal</span>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <div className="w-1 h-1 rounded-full bg-indigo-400"></div>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 warm:text-stone-500 font-black tracking-widest uppercase">GovPrep Pro</span>
+                            </div>
                         </div>
                     </div>
+                    {/* Close button for mobile */}
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="lg:hidden p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                    >
+                        <LogOut className="w-5 h-5 rotate-180" />
+                    </button>
                 </div>
 
                 <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-2 relative z-10 custom-scrollbar">
@@ -89,7 +132,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 warm:bg-[var(--background)] relative selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-300">
+            <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 warm:bg-[var(--background)] relative selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-300 pt-16 lg:pt-0">
                 <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
                 <div className="relative z-10">
                     {children}

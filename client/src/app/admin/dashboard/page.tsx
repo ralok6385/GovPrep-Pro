@@ -86,7 +86,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
                 <StatCard label="Students" value={data.kpis.totalStudents} trend="+12%" icon={Users} color="text-blue-600 dark:text-blue-400" bg="bg-blue-50 dark:bg-blue-900/20 warm:bg-blue-100/50" />
                 <StatCard label="Active" value={data.kpis.activeToday} trend="Live" icon={Zap} color="text-amber-600 dark:text-amber-400" bg="bg-amber-50 dark:bg-amber-900/20 warm:bg-amber-100/50" />
                 <StatCard label="Total Tests" value={data.kpis.totalTests} trend="+5" icon={FileText} color="text-indigo-600 dark:text-indigo-400" bg="bg-indigo-50 dark:bg-indigo-900/20 warm:bg-indigo-100/50" />
@@ -354,9 +354,9 @@ function StatCard({ label, value, icon: Icon, color, bg, trend }: { label: strin
 
 function PerformanceRow({ id, rank, name, test, score, accuracy, avatar }: { id: string, rank: number, name: string, test: string, score: number, accuracy: string, avatar?: string }) {
     return (
-        <Link href={`/admin/results/${id}`} className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/50 warm:bg-[#fdf6e3] hover:bg-white dark:hover:bg-slate-800 warm:hover:bg-white rounded-3xl border border-transparent hover:border-slate-100 dark:hover:border-slate-700 warm:hover:border-stone-200 hover:shadow-lg hover:shadow-slate-200/40 dark:hover:shadow-black/20 transition-all group cursor-pointer block">
+        <Link href={`/admin/results/${id}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/50 warm:bg-[#fdf6e3] hover:bg-white dark:hover:bg-slate-800 warm:hover:bg-white rounded-3xl border border-transparent hover:border-slate-100 dark:hover:border-slate-700 warm:hover:border-stone-200 hover:shadow-lg hover:shadow-slate-200/40 dark:hover:shadow-black/20 transition-all group cursor-pointer block gap-4 sm:gap-0">
             <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 flex items-center justify-center text-xs font-black rounded-xl shadow-sm ${rank === 1 ? 'bg-amber-100 text-amber-600 border border-amber-200' :
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-[10px] sm:text-xs font-black rounded-xl shadow-sm shrink-0 ${rank === 1 ? 'bg-amber-100 text-amber-600 border border-amber-200' :
                     rank === 2 ? 'bg-slate-200 text-slate-600 border border-slate-300' :
                         'bg-white dark:bg-slate-700 warm:bg-white text-slate-400 border border-slate-100 dark:border-slate-600 warm:border-stone-200'
                     }`}>
@@ -364,7 +364,7 @@ function PerformanceRow({ id, rank, name, test, score, accuracy, avatar }: { id:
                 </div>
 
                 {/* Avatar Display */}
-                <div className="w-10 h-10 rounded-full border border-slate-100 dark:border-slate-700 relative overflow-hidden shrink-0 shadow-sm">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-slate-100 dark:border-slate-700 relative overflow-hidden shrink-0 shadow-sm">
                     {avatar ? (
                         <img
                             src={avatar.startsWith('http') ? avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${avatar}`}
@@ -373,31 +373,32 @@ function PerformanceRow({ id, rank, name, test, score, accuracy, avatar }: { id:
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
                         />
                     ) : (
-                        <div className="w-full h-full bg-indigo-50 dark:bg-indigo-900/50 warm:bg-indigo-100/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                        <div className="w-full h-full bg-indigo-50 dark:bg-indigo-900/50 warm:bg-indigo-100/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs sm:text-sm">
                             {name.charAt(0).toUpperCase()}
                         </div>
                     )}
                     {/* Fallback for broken image */}
-                    <div className="hidden absolute inset-0 bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                    <div className="hidden absolute inset-0 bg-indigo-50 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs sm:text-sm">
                         {name.charAt(0).toUpperCase()}
                     </div>
                 </div>
 
-                <div className="max-w-[150px] sm:max-w-none">
-                    <span className="block text-sm font-black text-slate-800 dark:text-slate-200 warm:text-stone-800 leading-tight mb-0.5">{name}</span>
+                <div className="min-w-0 flex-1">
+                    <span className="block text-sm font-black text-slate-800 dark:text-slate-200 warm:text-stone-800 leading-tight mb-0.5 truncate">{name}</span>
                     <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 warm:text-stone-500 uppercase truncate tracking-tight">{test}</span>
                 </div>
             </div>
-            <div className="flex items-center gap-8">
+
+            <div className="flex items-center justify-end gap-6 sm:gap-8 ml-12 sm:ml-0 border-t sm:border-t-0 border-slate-100/50 pt-2 sm:pt-0">
                 <div className="text-right">
                     <p className="text-lg font-black text-slate-800 dark:text-white warm:text-stone-800 leading-none">{score}</p>
                     <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mt-1">Pts</p>
                 </div>
-                <div className="text-right hidden sm:block">
+                <div className="text-right">
                     <p className="text-lg font-black text-emerald-500 leading-none">{accuracy}</p>
-                    <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mt-1">Accuracy</p>
+                    <p className="text-[9px] font-black text-slate-300 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mt-1">Acc</p>
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 warm:bg-indigo-100/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                         <ArrowRight className="w-4 h-4" />
                     </div>
