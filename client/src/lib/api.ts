@@ -1,13 +1,17 @@
 import axios from 'axios';
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || '/api';
+let baseURL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Safely append /api if the user forgot to add it in Vercel environment variables
+if (baseURL.startsWith('http') && !baseURL.endsWith('/api')) {
+    baseURL = baseURL.replace(/\/$/, '') + '/api';
+}
 
 const api = axios.create({
     baseURL,
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 30000, // 30s timeout to prevent hanging requests
+    timeout: 60000, // 60s timeout to allow Render free tier to wake up
 });
 
 // Add a request interceptor to attach the token
