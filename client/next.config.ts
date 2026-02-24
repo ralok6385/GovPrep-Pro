@@ -42,15 +42,21 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Disable caching for HTML pages completely to prevent stale UI on hard refresh
         source: '/(.*)',
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
             value: 'on',
           },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, s-maxage=0, must-revalidate',
+          },
         ],
       },
       {
+        // Keep aggressive caching for strictly static assets (like images)
         source: '/images/(.*)',
         headers: [
           {

@@ -6,8 +6,6 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from 'react-hot-toast';
 
 import { NotificationProvider } from "@/context/NotificationContext";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -55,7 +53,6 @@ export default function RootLayout({
           <NotificationProvider>
             <ThemeProvider>
               <Toaster position="top-center" />
-              <ServiceWorkerRegistration />
               {children}
             </ThemeProvider>
           </NotificationProvider>
