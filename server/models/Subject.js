@@ -27,6 +27,9 @@ const subjectSchema = mongoose.Schema(
     }
 );
 
+// Add Index for Performance
+subjectSchema.index({ examId: 1 });
+
 const Subject = mongoose.models.Subject || mongoose.model('Subject', subjectSchema);
 
 module.exports = Subject;

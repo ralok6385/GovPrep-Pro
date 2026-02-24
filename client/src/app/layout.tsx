@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from 'react-hot-toast';
 
 import { NotificationProvider } from "@/context/NotificationContext";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,10 @@ export const metadata: Metadata = {
 
 export const viewport = {
   themeColor: "#4f46e5",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -50,6 +55,7 @@ export default function RootLayout({
           <NotificationProvider>
             <ThemeProvider>
               <Toaster position="top-center" />
+              <ServiceWorkerRegistration />
               {children}
             </ThemeProvider>
           </NotificationProvider>

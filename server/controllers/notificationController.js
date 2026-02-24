@@ -6,8 +6,10 @@ const User = require('../models/User');
 // @access  Private
 const getMyNotifications = async (req, res) => {
     try {
-        const notes = await Notification.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(20);
-        const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
+        const [notes, unreadCount] = await Promise.all([
+            Notification.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(20).lean(),
+            Notification.countDocuments({ user: req.user._id, isRead: false })
+        ]);
 
         res.json({
             notifications: notes,
@@ -91,4 +93,20 @@ const sendNotification = async (req, res) => {
     }
 };
 
-module.exports = { getMyNotifications, markAsRead, sendNotification };
+// @desc    Mark All as Read
+// @route   PUT /api/notifications/read-all
+// @access  Private
+const markAllRead = async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { user: req.user._id, isRead: false },
+            { $set: { isRead: true } }
+        );
+        res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+        console.error("markAllRead Error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+module.exports = { getMyNotifications, markAsRead, markAllRead, sendNotification };

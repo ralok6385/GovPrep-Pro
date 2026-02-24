@@ -30,13 +30,8 @@ export default function AnalysisPage() {
         const fetchResult = async () => {
             try {
                 const { data } = await api.get(`/tests/results/${params.id}`);
-                console.log('Fetched Result:', data);
-                if (data.responses) {
-                    console.log(`Responses count: ${data.responses.length}`);
-                }
                 setResult(data);
             } catch (err) {
-                console.log('API fetch failed, checking localStorage...');
                 const savedResult = localStorage.getItem(`test_result_${params.id}`);
                 if (savedResult) {
                     setResult(JSON.parse(savedResult));
@@ -504,95 +499,23 @@ export default function AnalysisPage() {
                                 setIsGeneratingPdf(true);
                                 try {
                                     const { default: jsPDF } = await import('jspdf');
-                                    const { default: html2canvas } = await import('html2canvas');
+                                    const { toPng } = await import('html-to-image');
                                     const element = document.getElementById('analysis-report');
                                     const pdfHeader = document.getElementById('pdf-header');
                                     if (!element || !pdfHeader) return;
 
-                                    // Force light mode for capture if needed, or just let it be
+                                    // Show the hidden header for the PDF Output
                                     pdfHeader.classList.remove('hidden');
 
-                                    const canvas = await html2canvas(element, {
-                                        scale: 2,
-                                        useCORS: true,
-                                        allowTaint: true,
-                                        logging: false,
-                                        windowWidth: 800,
-                                        onclone: (clonedDoc) => {
-                                            // Aggressive fix for html2canvas lab/oklsh crash
-                                            // 1. Strip ALL styles and variables from the root/body
-                                            const root = clonedDoc.documentElement as HTMLElement;
-                                            root.removeAttribute('style');
-                                            root.style.cssText = '--nothing: 0;';
-
-                                            // 2. Clear all external and internal styles
-                                            const styles = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]');
-                                            styles.forEach(s => s.remove());
-
-                                            // 3. Add a basic, safe stylesheet for the report
-                                            const style = clonedDoc.createElement('style');
-                                            style.innerHTML = `
-                                                * {
-                                                    box-sizing: border-box !important;
-                                                    color-scheme: light !important;
-                                                    --tw-ring-color: transparent !important;
-                                                    --tw-ring-offset-width: 0px !important;
-                                                }
-                                                body, html { 
-                                                    background: white !important; 
-                                                    margin: 0 !important; 
-                                                    padding: 0 !important; 
-                                                    color: #0f172a !important;
-                                                }
-                                                #analysis-report {
-                                                    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-                                                    background: #f8fafc !important;
-                                                    color: #0f172a !important;
-                                                    padding: 40px !important;
-                                                    width: 800px !important;
-                                                    margin: 0 auto !important;
-                                                }
-                                                .rounded-3xl { border-radius: 1.5rem !important; }
-                                                .rounded-\\[2\\.5rem\\] { border-radius: 2.5rem !important; }
-                                                .bg-white { background: white !important; }
-                                                .text-slate-800 { color: #1e293b !important; }
-                                                .text-slate-600 { color: #475569 !important; }
-                                                .bg-indigo-600 { background: #4f46e5 !important; }
-                                                .bg-indigo-900 { background: #312e81 !important; }
-                                                .bg-emerald-500 { background: #10b981 !important; }
-                                                .bg-rose-500 { background: #f43f5e !important; }
-                                                .bg-rose-600 { background: #e11d48 !important; }
-                                                .border { border: 1px solid #e2e8f0 !important; }
-                                                #pdf-header {
-                                                    margin-bottom: 30px !important;
-                                                    border-bottom: 2px solid #4f46e5 !important;
-                                                    padding-bottom: 15px !important;
-                                                    display: block !important;
-                                                }
-                                                .grid { display: block !important; }
-                                                .grid-cols-2 { display: block !important; }
-                                                .gap-4 { margin-bottom: 15px !important; }
-                                                .hidden { display: none !important; }
-                                                .flex { display: flex !important; }
-                                                .items-center { align-items: center !important; }
-                                                .justify-center { justify-content: center !important; }
-                                            `;
-                                            clonedDoc.head.appendChild(style);
-
-                                            // 4. Force styles on specific elements
-                                            const all = clonedDoc.querySelectorAll('*');
-                                            all.forEach((el: any) => {
-                                                if (el.className && typeof el.className === 'string') {
-                                                    if (el.classList.contains('bg-white')) el.style.backgroundColor = 'white';
-                                                    if (el.classList.contains('bg-indigo-900')) el.style.backgroundColor = '#312e81';
-                                                    if (el.classList.contains('text-white')) el.style.color = 'white';
-                                                }
-                                            });
-                                        }
+                                    const imgData = await toPng(element, {
+                                        backgroundColor: '#ffffff',
+                                        style: { transform: 'scale(1)', transformOrigin: 'top left', margin: '0' },
+                                        pixelRatio: 2
                                     });
 
+                                    // Hide it back
                                     pdfHeader.classList.add('hidden');
-                                    const imgData = canvas.toDataURL('image/png');
+
                                     const pdf = new jsPDF('p', 'mm', 'a4');
                                     const imgProps = pdf.getImageProperties(imgData);
                                     const pdfWidth = pdf.internal.pageSize.getWidth();

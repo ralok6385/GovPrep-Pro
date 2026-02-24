@@ -34,6 +34,12 @@ const contentSchema = mongoose.Schema(
     }
 );
 
+// Add Indexes for Performance
+contentSchema.index({ subjectId: 1 });
+contentSchema.index({ type: 1 });
+contentSchema.index({ subjectId: 1, type: 1 });
+contentSchema.index({ createdAt: -1 });
+
 const Content = mongoose.models.Content || mongoose.model('Content', contentSchema);
 
 module.exports = Content;

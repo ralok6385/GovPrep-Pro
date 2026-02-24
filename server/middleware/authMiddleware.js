@@ -19,7 +19,7 @@ const protect = async (req, res, next) => {
                 return res.status(503).json({ message: 'Service unavailable, database reconnecting...' });
             }
 
-            req.user = await User.findById(decoded.id).select('-password');
+            req.user = await User.findById(decoded.id).select('-password').lean();
 
             if (!req.user) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });

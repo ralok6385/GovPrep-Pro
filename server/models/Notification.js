@@ -33,4 +33,8 @@ const notificationSchema = mongoose.Schema(
     }
 );
 
+// Indexes for performance
+notificationSchema.index({ user: 1, createdAt: -1 }); // For fetching user notifications
+notificationSchema.index({ user: 1, isRead: 1 }); // For counting/updating unread
+
 module.exports = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);

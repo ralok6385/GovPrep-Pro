@@ -82,7 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
-            setUser(data);
+            // Merge with existing user data to prevent losing fields
+            setUser((prev: any) => prev ? { ...prev, ...data } : data);
             toast.success('Profile updated successfully');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Update failed');
@@ -103,7 +104,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
-            setUser(data);
+            // Merge with existing user data to prevent losing fields
+            setUser((prev: any) => prev ? { ...prev, ...data } : data);
             toast.success('Profile picture updated');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Image upload failed');

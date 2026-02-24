@@ -21,7 +21,10 @@ const getContent = async (req, res) => {
             query.type = type;
         }
 
-        const content = await Content.find(query).populate('subjectId', 'name');
+        const content = await Content.find(query)
+            .populate('subjectId', 'name')
+            .sort({ createdAt: -1 })
+            .lean();
         res.json(content);
     } catch (error) {
         console.error('[GetContent Error]:', error);

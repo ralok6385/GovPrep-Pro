@@ -32,7 +32,7 @@ export default function StudyMaterialPage() {
     );
 
     return (
-        <div className="space-y-8">
+        <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -67,8 +67,14 @@ export default function StudyMaterialPage() {
                     ))}
                 </div>
             ) : filteredContent.length === 0 ? (
-                <div className="text-center py-20 text-gray-500">
-                    <p>No study material found matching your criteria.</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                        <FileText className="w-9 h-9 text-slate-300 dark:text-slate-600" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-500 dark:text-slate-400 mb-1">No study material found</h3>
+                    <p className="text-sm text-slate-400 dark:text-slate-500 max-w-xs">
+                        {searchQuery ? `No results for "${searchQuery}". Try a different search term.` : 'New study material will appear here when your admin uploads PDF notes.'}
+                    </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">

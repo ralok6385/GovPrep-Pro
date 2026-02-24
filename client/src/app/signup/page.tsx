@@ -31,7 +31,7 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-screen flex bg-slate-50">
+        <div className="min-h-[100dvh] flex bg-slate-50">
             {/* Left Side - Railway Branding */}
             <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-900 to-slate-900 text-white p-12 flex-col justify-between relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10">
@@ -91,6 +91,8 @@ export default function SignupPage() {
                                 <input
                                     type="text"
                                     required
+                                    name="name"
+                                    autoComplete="name"
                                     className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                                     placeholder="Amit Kumar"
                                     value={formData.name}
@@ -116,6 +118,8 @@ export default function SignupPage() {
                             <input
                                 type="email"
                                 required
+                                name="email"
+                                autoComplete="email"
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                                 placeholder="student@example.com"
                                 value={formData.email}
@@ -165,6 +169,8 @@ export default function SignupPage() {
                             <input
                                 type="password"
                                 required
+                                name="password"
+                                autoComplete="new-password"
                                 className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                                 placeholder="Create Password"
                                 value={formData.password}

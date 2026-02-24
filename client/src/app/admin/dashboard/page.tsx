@@ -161,13 +161,13 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Subject ROI Analysis */}
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col">
+                <div className="bg-white dark:bg-slate-900 warm:bg-[#fdf0d5] rounded-[2.5rem] border border-slate-100 dark:border-slate-800 warm:border-stone-200 shadow-sm p-8 flex flex-col transition-colors">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="w-10 h-10 bg-rose-50 rounded-2xl flex items-center justify-center">
                             <AlertCircle className="w-5 h-5 text-rose-500" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-black text-slate-800 tracking-tight">Intelligence Feed</h3>
+                            <h3 className="text-lg font-black text-slate-800 dark:text-white warm:text-stone-800 tracking-tight">Intelligence Feed</h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Identifying Weak Areas</p>
                         </div>
                     </div>
@@ -331,22 +331,22 @@ export default function AdminDashboard() {
 
 function StatCard({ label, value, icon: Icon, color, bg, trend }: { label: string, value: string | number, icon: any, color: string, bg: string, trend?: string }) {
     return (
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group">
+        <div className="bg-white dark:bg-slate-900 warm:bg-[#fdf0d5] p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 warm:border-stone-200 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-black/20 transition-all duration-300 group">
             <div className="flex items-start justify-between mb-4">
                 <div className={`p-3 rounded-2xl ${bg} ${color} transition-transform group-hover:scale-110 shadow-sm`}>
                     <Icon className="w-5 h-5" />
                 </div>
                 {trend && (
-                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${trend.startsWith('+') ? 'bg-emerald-50 text-emerald-600' :
-                        trend.startsWith('-') ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${trend.startsWith('+') ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
+                        trend.startsWith('-') ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
                         } uppercase tracking-tighter`}>
                         {trend}
                     </span>
                 )}
             </div>
             <div>
-                <p className="text-3xl font-black text-slate-800 mb-0.5">{value}</p>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{label}</p>
+                <p className="text-3xl font-black text-slate-800 dark:text-white warm:text-stone-800 mb-0.5">{value}</p>
+                <p className="text-slate-400 dark:text-slate-500 warm:text-stone-500 text-[10px] font-black uppercase tracking-widest">{label}</p>
             </div>
         </div>
     );
@@ -414,11 +414,11 @@ function WeakSubjectBar({ subject, percentage, color }: { subject: string, perce
             <div className="flex justify-between items-end mb-2">
                 <div>
                     <span className="text-xs font-black text-slate-700 block mb-0.5">{subject}</span>
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Global Avg: {Math.round(percentage + (Math.random() * 10 - 5))}%</span>
+                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Avg: {Math.round(percentage + (subject.length % 7) - 3)}%</span>
                 </div>
                 <span className={`text-xs font-black ${color.replace('bg-', 'text-')}`}>{percentage}%</span>
             </div>
-            <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
+            <div className="h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                 <div
                     className={`h-full ${color} rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(0,0,0,0.1)]`}
                     style={{ width: `${percentage}%` }}

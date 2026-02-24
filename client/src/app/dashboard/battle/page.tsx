@@ -52,25 +52,21 @@ export default function BattlePage() {
         // Using relative URL '/api' implies same host, but socket.io needs 'http://localhost:5002' explicitly often 
         // unless proxy upgrades websocket. 
         // Let's rely on correct proxy config or explicit URL.
-        const socketUrl = 'http://localhost:5002';
+        const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
 
         const newSocket = io(socketUrl, {
             transports: ['websocket'],
             upgrade: false
         });
 
-        newSocket.on('connect', () => {
-            console.log('Battle Socket Connected:', newSocket.id);
-        });
+        newSocket.on('connect', () => { });
 
         newSocket.on('match_found', (data) => {
-            console.log('Match Found!', data);
             setRoomId(data.roomId);
             setStatus('searching'); // Still searching visually until game_start
         });
 
         newSocket.on('game_start', (data) => {
-            console.log('Game Start!', data);
             setQuestions(data.questions);
             setPlayers(data.players);
             setStatus('playing');
@@ -82,7 +78,6 @@ export default function BattlePage() {
         });
 
         newSocket.on('score_update', (data) => {
-            console.log('Score Update', data);
             setPlayers(data.players);
         });
 

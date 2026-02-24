@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
-import { Menu, X, ChevronLeft, ChevronRight, Info, Languages, Shield } from 'lucide-react';
+import { Menu, X, ChevronLeft, ChevronRight, Info, Languages, Shield, Bookmark, BookmarkCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { formatDuration } from '@/utils/format';
 import { Question, Test } from '@/types';
@@ -40,6 +40,7 @@ export default function LiveTestPage() {
     const [answers, setAnswers] = useState<{ [key: string]: number }>({});
     const [markedReview, setMarkedReview] = useState<{ [key: string]: boolean }>({});
     const [visited, setVisited] = useState<{ [key: string]: boolean }>({});
+    const [bookmarkedQuestions, setBookmarkedQuestions] = useState<{ [key: string]: boolean }>({});
 
     const [timeLeft, setTimeLeft] = useState(0);
     const [isdrawerOpen, setDrawerOpen] = useState(false);
@@ -196,6 +197,19 @@ export default function LiveTestPage() {
                         setVisited(prev => ({ ...prev, [firstQId]: true }));
                     }
 
+                    // Fetch bookmarks for this test
+                    try {
+                        const allQIds = fetchedQuestions.map((q: any) => q._id);
+                        const { data: bData } = await api.post('/bookmarks/check', { questionIds: allQIds });
+                        if (bData && bData.bookmarkedIds) {
+                            const bMap: any = {};
+                            bData.bookmarkedIds.forEach((id: string) => { bMap[id] = true; });
+                            setBookmarkedQuestions(bMap);
+                        }
+                    } catch (e) {
+                        console.error('Failed to load bookmarks', e);
+                    }
+
                     // RESTORE STATE FROM LOCALSTORAGE
                     const savedStateKey = `live_test_${params.id}_${user?._id}`;
                     const savedState = localStorage.getItem(savedStateKey);
@@ -317,7 +331,20 @@ export default function LiveTestPage() {
             toast('End of Section', { icon: '🛑' });
         }
     };
-
+    const handleBookmarkToggle = async () => {
+        if (!currentQ) return;
+        const qId = currentQ._id;
+        try {
+            const { data } = await api.post('/bookmarks/toggle', { questionId: qId });
+            setBookmarkedQuestions(prev => ({
+                ...prev,
+                [qId]: data.bookmarked
+            }));
+            toast.success(data.message, { id: 'bookmark-toast' });
+        } catch (error) {
+            toast.error('Failed to toggle bookmark');
+        }
+    };
     const handleMarkForReview = () => {
         if (currentQ) {
             setMarkedReview(prev => ({ ...prev, [currentQ._id]: !prev[currentQ._id] }));
@@ -364,7 +391,7 @@ export default function LiveTestPage() {
                     return {
                         questionId: qId,
                         selectedOption: ansChar,
-                        timeTakenSeconds: 60 // Defaulting to 60 for now, could be improved with real timer
+                        timeTakenSeconds: 60 // Defaulting to 60 for now
                     }
                 }),
                 tabSwitchWarnings: finalWarningCount,
@@ -376,7 +403,19 @@ export default function LiveTestPage() {
             // CLEAR CACHE on successful submit
             localStorage.removeItem(`live_test_${params.id}_${user?._id}`);
 
-            router.replace(`/dashboard/analysis/${data._id}`);
+            // EXIT FULLSCREEN before redirecting
+            if (document.fullscreenElement) {
+                try {
+                    await document.exitFullscreen();
+                } catch (e) {
+                    console.warn('Could not exit fullscreen:', e);
+                }
+            }
+
+            // Small delay to let fullscreen exit complete, then redirect
+            setTimeout(() => {
+                router.replace(`/dashboard/analysis/${data._id}`);
+            }, 300);
 
         } catch (error) {
             console.error(error);
@@ -573,6 +612,18 @@ export default function LiveTestPage() {
                                 <span className="hidden md:inline">{markedReview[currentQ._id] ? 'Unmark' : 'Review'}</span>
                             </button>
                             <button
+                                onClick={handleBookmarkToggle}
+                                className={`flex items-center px-3 md:px-4 py-2 bg-white border font-bold rounded hover:bg-slate-100 text-sm gap-2 transition-colors ${bookmarkedQuestions[currentQ._id] ? 'border-amber-500 text-amber-600 bg-amber-50 hover:bg-amber-100' : 'border-slate-300 text-slate-700'}`}
+                                title="Bookmark for Revision"
+                            >
+                                {bookmarkedQuestions[currentQ._id] ? (
+                                    <BookmarkCheck className="w-4 h-4 fill-amber-500 text-amber-500" />
+                                ) : (
+                                    <Bookmark className="w-4 h-4" />
+                                )}
+                                <span className="hidden md:inline">{bookmarkedQuestions[currentQ._id] ? 'Saved' : 'Save'}</span>
+                            </button>
+                            <button
                                 onClick={handleClearResponse}
                                 className="px-3 md:px-4 py-2 bg-white border border-slate-300 text-slate-700 font-bold rounded hover:bg-slate-100 text-sm"
                                 title="Clear Response"
@@ -759,7 +810,7 @@ export default function LiveTestPage() {
                     )}
 
                     {/* Fullscreen & Focus Requirement Overlay */}
-                    {test?.type !== 'quiz' && !loading && typeof document !== 'undefined' && (!document.fullscreenElement || !isFocused) && !submitting && (
+                    {test?.type !== 'quiz' && !loading && typeof document !== 'undefined' && (!document.fullscreenElement || !isFocused) && !submitting && !showSubmitModal && (
                         <div className="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-6 text-center">
                             <div className="max-w-md bg-white p-8 rounded-[2rem] shadow-2xl space-y-6 animate-in zoom-in-95 duration-300">
                                 <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">

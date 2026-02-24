@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import api from '@/lib/api';
 import { Loader2, TrendingDown, TrendingUp, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface WeaknessData {
     radarData: {
@@ -24,7 +25,7 @@ export default function WeaknessHeatmap() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [generating, setGenerating] = useState(false);
-    const router = require('next/navigation').useRouter();
+    const router = useRouter();
 
     useEffect(() => {
         fetchAnalysis();

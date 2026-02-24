@@ -20,8 +20,8 @@ export default function QuestionsPage() {
 
     const fetchQuestions = async () => {
         try {
-            const { data } = await api.get('/questions');
-            setQuestions(data);
+            const { data } = await api.get('/questions?limit=200');
+            setQuestions(Array.isArray(data) ? data : data.questions || []);
         } catch (error) {
             console.error('Failed to load questions', error);
         } finally {

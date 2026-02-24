@@ -21,7 +21,7 @@ const getSubjects = async (req, res) => {
             return res.json([]);
         }
 
-        const subjects = await Subject.find(query).populate('examId', 'name');
+        const subjects = await Subject.find(query).populate('examId', 'name').lean();
         res.json(subjects);
     } catch (error) {
         console.error('[GetSubjects Error] Crashed:', error);

@@ -108,7 +108,7 @@ export default function LecturesPage() {
 
                                         {/* Duration Badge */}
                                         <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow-lg">
-                                            <span>12:34</span>
+                                            <span>{video.duration || 'Video'}</span>
                                         </div>
 
                                         {video.isPremium && (

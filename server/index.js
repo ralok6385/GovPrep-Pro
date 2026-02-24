@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const compression = require('compression');
 const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 
@@ -25,19 +26,22 @@ const io = new Server(server, {
 });
 
 // Middleware
+app.use(compression()); // Gzip all responses (~70% size reduction)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Permissive CORS for Express
 app.use(cors({
-    origin: '*', // Allow all origins (for debugging/initial deployment)
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
 }));
 
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '7d', // Cache static uploads for 7 days
+    immutable: true
+}));
 
 // Socket connection logic
 const { findMatch, submitAnswer, handleDisconnect } = require('./controllers/battleController');
@@ -99,6 +103,7 @@ app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/ranks', require('./routes/rankRoutes')); // [NEW]
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/bookmarks', require('./routes/bookmarkRoutes'));
 
 const PORT = process.env.PORT || 5000;
 

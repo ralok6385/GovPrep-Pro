@@ -87,6 +87,10 @@ userSchema.pre('save', async function () {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
+// Add Indexes for Performance
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
+
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 module.exports = User;

@@ -84,9 +84,9 @@ const getAllTests = async (req, res) => {
         const query = req.user && req.user.role === 'admin' ? {} : { isPublished: true };
         const tests = await Test.find(query)
             .populate('examId', 'name slug')
-            .sort({ createdAt: -1 }); // Removed .select('-questions') for admins so they see count, or handle carefully?
+            .sort({ createdAt: -1 })
+            .lean();
 
-        // Optimization: tests.map to just send count for questions
         const finalTests = tests.map(t => ({
             _id: t._id,
             title: t.title,
@@ -100,7 +100,7 @@ const getAllTests = async (req, res) => {
 
         // Check for attempts (if student)
         if (req.user && req.user.role === 'student') {
-            const attempts = await TestResult.find({ studentId: req.user._id }).select('testId');
+            const attempts = await TestResult.find({ studentId: req.user._id }).select('testId').lean();
             const attemptedIds = new Set(attempts.map(a => a.testId.toString()));
 
             finalTests.forEach(t => {
@@ -146,26 +146,13 @@ const getTestsByExam = async (req, res) => {
 // @access  Private
 const getTestById = async (req, res) => {
     try {
-        const test = await Test.findById(req.params.id).select('-questions'); // Fetch meta only
+        const test = await Test.findById(req.params.id).lean();
 
         if (!test) {
             return res.status(404).json({ message: 'Test not found' });
         }
 
-        // We might want to know question count, but questions are excluded.
-        // Let's re-fetch just the question array length if needed? 
-        // Or just include questions ID array but not populated?
-        // Actually, MongoDB document has the array of IDs in 'questions' field if we don't populate.
-        // But we used .select('-questions').
-        // Let's remove .select('-questions') and NOT populate. 
-        // That way we get the array of IDs and can count them.
-
-        const testWithIds = await Test.findById(req.params.id);
-        // We don't populate, so valid.
-
-        if (!testWithIds) return res.status(404).json({ message: 'Test not found' });
-
-        res.json(testWithIds);
+        res.json(test);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
@@ -562,7 +549,8 @@ const getMyResults = async (req, res) => {
     try {
         const results = await TestResult.find({ studentId: req.user._id })
             .populate('testId', 'title type totalMarks')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .lean();
         res.json(results);
     } catch (error) {
         console.error('Get My Results Error:', error);

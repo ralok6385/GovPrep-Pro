@@ -10,7 +10,9 @@ const {
     getUsers,
     updateUserProfile,
     updateProfileImage,
-    toggleUserStatus
+    toggleUserStatus,
+    forgotPassword,
+    resetPassword
 } = require('../controllers/authController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const validate = require('../middleware/validate');
@@ -47,6 +49,8 @@ const upload = multer({
 
 router.post('/signup', validate(signupSchema), registerUser);
 router.post('/login', validate(loginSchema), authUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.route('/profile')
     .get(protect, getUserProfile)
     .put(protect, validate(updateProfileSchema), updateUserProfile);

@@ -57,6 +57,8 @@ testResultSchema.index({ studentId: 1 });
 testResultSchema.index({ testId: 1 });
 testResultSchema.index({ score: -1 });
 testResultSchema.index({ testId: 1, score: -1 }); // For Leaderboards
+testResultSchema.index({ studentId: 1, createdAt: -1 }); // For student history
+testResultSchema.index({ createdAt: -1 }); // For recent results
 
 const TestResult = mongoose.model('TestResult', testResultSchema);
 

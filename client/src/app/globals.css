@@ -46,6 +46,10 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
   /* Smooth Theme Transition */
+  -webkit-tap-highlight-color: transparent;
+  /* Remove gray tap highlight on mobile iOS/Android */
+  touch-action: manipulation;
+  /* Disable double-tap to zoom to improve click latency */
 }
 
 /* Hide Next.js Dev Indicators */
@@ -56,4 +60,11 @@ nextjs-portal {
   display: none !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* Safe area padding for mobile Web Apps (PWA) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

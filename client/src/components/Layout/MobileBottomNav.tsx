@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Zap, FileText, User } from 'lucide-react';
+import { Home, BookOpen, Zap, FileText, User, Trophy } from 'lucide-react';
 
 export default function MobileBottomNav() {
     const pathname = usePathname();
@@ -40,8 +40,8 @@ export default function MobileBottomNav() {
                 <NavItem icon={Home} label="Home" href="/dashboard" />
                 <NavItem icon={FileText} label="Study" href="/dashboard/study-material" />
                 <NavItem icon={Zap} label="Tests" href="/dashboard/tests" />
-                <NavItem icon={BookOpen} label="Lectures" href="/dashboard/lectures" />
-                <NavItem icon={User} label="Profile" href="/profile" />
+                <NavItem icon={Trophy} label="Rank" href="/dashboard/leaderboard" />
+                <NavItem icon={User} label="Profile" href="/dashboard/profile" />
             </div>
         </div>
     );

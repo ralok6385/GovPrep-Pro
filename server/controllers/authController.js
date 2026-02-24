@@ -226,6 +226,10 @@ const updateUserProfile = async (req, res) => {
             targetExam: updatedUser.targetExam,
             language: updatedUser.language,
             avatar: updatedUser.avatar,
+            streak: updatedUser.streak,
+            xp: updatedUser.xp,
+            level: updatedUser.level,
+            badges: updatedUser.badges,
             token: generateToken(updatedUser._id),
         });
     } else {
@@ -261,6 +265,10 @@ const updateProfileImage = async (req, res) => {
                 targetExam: updatedUser.targetExam,
                 language: updatedUser.language,
                 avatar: updatedUser.avatar,
+                streak: updatedUser.streak,
+                xp: updatedUser.xp,
+                level: updatedUser.level,
+                badges: updatedUser.badges,
                 token: generateToken(updatedUser._id),
             });
         } else {
@@ -289,5 +297,91 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
-module.exports = { authUser, registerUser, getUserProfile, selectExam, getUsers, updateUserProfile, updateProfileImage, toggleUserStatus };
 
+
+// @desc    Request password reset (verify identity via email + phone)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+    try {
+        const { email, phone } = req.body;
+
+        if (!email || !phone) {
+            return res.status(400).json({ message: 'Email and phone number are required' });
+        }
+
+        const user = await User.findOne({ email: email.toLowerCase().trim(), isDeleted: { $ne: true } });
+
+        if (!user) {
+            return res.status(404).json({ message: 'No account found with this email' });
+        }
+
+        // Verify phone matches (security check)
+        const storedPhone = (user.phone || '').replace(/\s/g, '').slice(-10);
+        const inputPhone = phone.replace(/\s/g, '').slice(-10);
+
+        if (!storedPhone || storedPhone !== inputPhone) {
+            return res.status(400).json({ message: 'Phone number does not match our records' });
+        }
+
+        // Generate a time-limited reset token (15 minutes)
+        const resetToken = jwt.sign(
+            { id: user._id, purpose: 'password_reset' },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+
+        res.json({
+            message: 'Identity verified. You can now reset your password.',
+            resetToken,
+        });
+    } catch (error) {
+        console.error('[Forgot Password Error]:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password
+// @access  Public (with valid reset token)
+const resetPassword = async (req, res) => {
+    try {
+        const { resetToken, newPassword } = req.body;
+
+        if (!resetToken || !newPassword) {
+            return res.status(400).json({ message: 'Reset token and new password are required' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+
+        // Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ message: 'Reset link has expired. Please try again.' });
+        }
+
+        if (decoded.purpose !== 'password_reset') {
+            return res.status(400).json({ message: 'Invalid reset token' });
+        }
+
+        const user = await User.findById(decoded.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.password = newPassword; // Will be hashed by the pre-save hook
+        await user.save();
+
+        res.json({ message: 'Password reset successfully. You can now login with your new password.' });
+    } catch (error) {
+        console.error('[Reset Password Error]:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+
+module.exports = { authUser, registerUser, getUserProfile, selectExam, getUsers, updateUserProfile, updateProfileImage, toggleUserStatus, forgotPassword, resetPassword };

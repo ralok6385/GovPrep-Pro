@@ -30,3 +30,7 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Ignored Directories
+server/uploads
+.agents

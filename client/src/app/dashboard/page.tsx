@@ -357,7 +357,7 @@ export default function Dashboard() {
                                                 <p className="text-[10px] text-slate-500 font-medium">Critical Attention Needed</p>
                                             </div>
                                         </div>
-                                        <Link href="/content" className="p-2 bg-white dark:bg-slate-800 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                                        <Link href="/dashboard/study-material" className="p-2 bg-white dark:bg-slate-800 rounded-lg text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
                                             <ArrowRight className="w-4 h-4" />
                                         </Link>
                                     </div>
@@ -456,7 +456,7 @@ export default function Dashboard() {
                             <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                             My Subjects
                         </h2>
-                        <Link href="/content" className="text-indigo-600 dark:text-indigo-300 text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                        <Link href="/dashboard/study-material" className="text-indigo-600 dark:text-indigo-300 text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 px-4 py-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
                             View All
                         </Link>
                     </div>

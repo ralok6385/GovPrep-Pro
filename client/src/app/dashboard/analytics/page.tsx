@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import { useState } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     BarChart, Bar, Cell
@@ -10,6 +9,7 @@ import {
 import { Target, Trophy, Clock, Zap, ArrowLeft, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useDashboardStats, useMyRank } from '@/hooks/useAPI';
 
 interface AnalyticsData {
     totalTests: number;
@@ -27,24 +27,9 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
-    const [data, setData] = useState<AnalyticsData | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading: loading } = useDashboardStats();
+    const { data: rankData } = useMyRank();
     const router = useRouter();
-
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
-
-    const fetchAnalytics = async () => {
-        try {
-            const res = await api.get('/analytics/student');
-            setData(res.data);
-        } catch (error) {
-            console.error('Failed to load analytics', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -70,7 +55,7 @@ export default function AnalyticsPage() {
         </div>
     );
 
-    const chartData = data.recentTrend.map((t, i) => ({
+    const chartData = data.recentTrend.map((t: any, i: number) => ({
         name: `Test ${i + 1}`,
         accuracy: t.accuracy
     }));
@@ -96,7 +81,7 @@ export default function AnalyticsPage() {
                     <StatCard label="Accuracy" value={`${data.avgAccuracy}%`} icon={Target} color="text-emerald-500" bg="bg-emerald-50 dark:bg-emerald-950/30" />
                     <StatCard label="Tests" value={data.totalTests} icon={Zap} color="text-amber-500" bg="bg-amber-50 dark:bg-amber-950/30" />
                     <StatCard label="Avg Time/Q" value={`${data.avgTimePerQuestion}s`} icon={Clock} color="text-blue-500" bg="bg-blue-50 dark:bg-blue-950/30" />
-                    <StatCard label="Global Rank" value="128" icon={Trophy} color="text-purple-500" bg="bg-purple-50 dark:bg-purple-950/30" />
+                    <StatCard label="Global Rank" value={rankData?.rank && rankData.rank !== 'N/A' ? `#${rankData.rank}` : '—'} icon={Trophy} color="text-purple-500" bg="bg-purple-50 dark:bg-purple-950/30" />
                 </div>
 
                 {/* Accuracy Trend Chart */}
@@ -132,16 +117,16 @@ export default function AnalyticsPage() {
                 <div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Subject Strength Analysis</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {data.subjectPerformance.map((subj) => (
+                        {data.subjectPerformance.map((subj: any) => (
                             <div key={subj.subject} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                                 <div className={`absolute top-0 right-0 w-1.5 h-full ${subj.status === 'Strong' ? 'bg-emerald-500' :
-                                        subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
+                                    subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
                                     }`}></div>
 
                                 <div className="flex items-center justify-between mb-4">
                                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{subj.subject}</span>
                                     <span className={`text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider ${subj.status === 'Strong' ? 'bg-emerald-50 text-emerald-600' :
-                                            subj.status === 'Average' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
+                                        subj.status === 'Average' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
                                         }`}>
                                         {subj.status}
                                     </span>
@@ -155,7 +140,7 @@ export default function AnalyticsPage() {
                                 <div className="mt-4 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-1000 ${subj.status === 'Strong' ? 'bg-emerald-500' :
-                                                subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
+                                            subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
                                             }`}
                                         style={{ width: `${subj.percentage}%` }}
                                     ></div>
@@ -175,10 +160,10 @@ export default function AnalyticsPage() {
                         <div className="text-center md:text-left">
                             <h4 className="text-XL font-bold mb-1">Improvement Plan for You</h4>
                             <p className="text-indigo-100 text-sm opacity-90 max-w-lg">
-                                Your accuracy in <strong>{data.subjectPerformance.find(s => s.status === 'Weak')?.subject || 'Math'}</strong> is below target. Focus on weak concepts this week to boost your score by 15%.
+                                Your accuracy in <strong>{data.subjectPerformance.find((s: any) => s.status === 'Weak')?.subject || 'Math'}</strong> is below target. Focus on weak concepts this week to boost your score by 15%.
                             </p>
                         </div>
-                        <Link href="/content" className="md:ml-auto px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl whitespace-nowrap shadow-lg">
+                        <Link href="/dashboard/study-material" className="md:ml-auto px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl whitespace-nowrap shadow-lg hover:shadow-xl transition-shadow">
                             Review Weak Topics
                         </Link>
                     </div>

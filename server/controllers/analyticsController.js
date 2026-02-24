@@ -14,7 +14,7 @@ let dashboardCache = {
     data: null,
     lastFetched: 0
 };
-const CACHE_DURATION = 30 * 1000; // 30 seconds
+const CACHE_DURATION = 60 * 1000; // 60 seconds
 
 const getDashboardStats = async (req, res) => {
     const now = Date.now();
@@ -38,10 +38,10 @@ const getDashboardStats = async (req, res) => {
             Test.countDocuments({}),
             Question.countDocuments({}),
             TestResult.countDocuments({}),
-            User.find({ role: 'student' }).sort({ createdAt: -1 }).limit(5).select('name email role avatar createdAt'),
-            Question.find({}).sort({ createdAt: -1 }).limit(3).populate('subjectId', 'name'),
-            Content.find({ type: 'video' }).sort({ createdAt: -1 }).limit(3).populate('subjectId', 'name'),
-            TestResult.find({}).sort({ createdAt: -1 }).limit(5).populate('studentId', 'name avatar').populate('testId', 'title')
+            User.find({ role: 'student' }).sort({ createdAt: -1 }).limit(5).select('name email role avatar createdAt').lean(),
+            Question.find({}).sort({ createdAt: -1 }).limit(3).populate('subjectId', 'name').lean(),
+            Content.find({ type: 'video' }).sort({ createdAt: -1 }).limit(3).populate('subjectId', 'name').lean(),
+            TestResult.find({}).sort({ createdAt: -1 }).limit(5).populate('studentId', 'name avatar').populate('testId', 'title').lean()
         ]);
 
         // Helper to get value or default
@@ -190,26 +190,41 @@ const getDashboardStats = async (req, res) => {
                 createdAt: tr?.createdAt
             })),
             activityData: await (async () => {
-                const last7Days = [...Array(7)].map((_, i) => {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    d.setHours(0, 0, 0, 0);
-                    return d;
-                }).reverse();
+                try {
+                    const sevenDaysAgo = new Date();
+                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                    sevenDaysAgo.setHours(0, 0, 0, 0);
 
-                return await Promise.all(last7Days.map(async (date) => {
-                    const nextDate = new Date(date);
-                    nextDate.setDate(nextDate.getDate() + 1);
+                    const results = await TestResult.aggregate([
+                        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+                        {
+                            $group: {
+                                _id: {
+                                    $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                                },
+                                attempts: { $sum: 1 }
+                            }
+                        },
+                        { $sort: { _id: 1 } }
+                    ]);
 
-                    const count = await TestResult.countDocuments({
-                        createdAt: { $gte: date, $lt: nextDate }
+                    // Build complete 7-day array
+                    const dayMap = {};
+                    results.forEach(r => { dayMap[r._id] = r.attempts; });
+
+                    return [...Array(7)].map((_, i) => {
+                        const d = new Date();
+                        d.setDate(d.getDate() - (6 - i));
+                        const key = d.toISOString().slice(0, 10);
+                        return {
+                            name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+                            attempts: dayMap[key] || 0
+                        };
                     });
-
-                    return {
-                        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-                        attempts: count
-                    };
-                }));
+                } catch (e) {
+                    console.error('[Analytics] Activity Data Failed:', e.message);
+                    return [];
+                }
             })(),
             weakAreas // [NEW] Real Aggregated Data
         };
@@ -232,12 +247,22 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// Per-student analytics cache (keyed by student ID)
+const studentAnalyticsCache = {};
+const STUDENT_CACHE_DURATION = 60 * 1000; // 60 seconds
+
 const getStudentAnalytics = async (req, res) => {
     try {
-        const studentId = req.user._id;
+        const studentId = req.user._id.toString();
+
+        // Check cache
+        const cached = studentAnalyticsCache[studentId];
+        if (cached && (Date.now() - cached.ts < STUDENT_CACHE_DURATION)) {
+            return res.json(cached.data);
+        }
 
         // 1. Basic Stats
-        const totalTests = await TestResult.countDocuments({ studentId });
+        const totalTests = await TestResult.countDocuments({ studentId: req.user._id });
         if (totalTests === 0) {
             return res.json({
                 totalTests: 0,
@@ -311,13 +336,13 @@ const getStudentAnalytics = async (req, res) => {
         ]);
 
         // 5. Recent Trend (Last 7 tests)
-        const trend = await TestResult.find({ studentId })
+        const trend = await TestResult.find({ studentId: req.user._id })
             .sort({ createdAt: -1 })
             .limit(7)
             .select('accuracy createdAt')
             .lean();
 
-        res.json({
+        const responseData = {
             totalTests,
             avgAccuracy: Math.round(stats[0]?.avgAccuracy || 0),
             avgTimePerQuestion: Math.round(timeStats[0]?.avgTime || 0),
@@ -327,7 +352,12 @@ const getStudentAnalytics = async (req, res) => {
                 status: s.accuracy > 70 ? 'Strong' : s.accuracy > 40 ? 'Average' : 'Weak'
             })),
             recentTrend: trend.reverse()
-        });
+        };
+
+        // Cache it
+        studentAnalyticsCache[studentId] = { data: responseData, ts: Date.now() };
+
+        res.json(responseData);
 
     } catch (error) {
         console.error('[Student Analytics Error]:', error);
@@ -335,12 +365,18 @@ const getStudentAnalytics = async (req, res) => {
     }
 };
 
+// Weakness analysis cache
+const weaknessCache = {};
+const WEAKNESS_CACHE_DURATION = 60 * 1000;
+
 const getWeaknessAnalysis = async (req, res) => {
     try {
-        const studentId = req.user._id;
+        const studentId = req.user._id.toString();
 
-        if (!studentId) {
-            return res.status(401).json({ message: 'Not authorized & No Student ID provided' });
+        // Check cache
+        const cached = weaknessCache[studentId];
+        if (cached && (Date.now() - cached.ts < WEAKNESS_CACHE_DURATION)) {
+            return res.json(cached.data);
         }
         const subjectStats = await TestResult.aggregate([
             { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
@@ -420,6 +456,12 @@ const getWeaknessAnalysis = async (req, res) => {
             weakAreas,
             strongAreas
         });
+
+        // Cache AFTER sending response
+        weaknessCache[studentId] = {
+            data: { radarData: subjectStats, difficultyAnalysis: difficultyStats, weakAreas, strongAreas },
+            ts: Date.now()
+        };
 
     } catch (error) {
         console.error('[Weakness Analysis Error]:', error);

@@ -66,11 +66,17 @@ const getMyRank = async (req, res) => {
     }
 };
 
-// @desc    Get Global Leaderboard
-// @route   GET /api/ranks/leaderboard
-// @access  Private
+// Leaderboard cache (heavy aggregation, called frequently)
+let leaderboardCache = { data: null, ts: 0 };
+const LEADERBOARD_CACHE_DURATION = 120 * 1000; // 2 minutes
+
 const getLeaderboard = async (req, res) => {
     try {
+        // Return cached data if fresh
+        if (leaderboardCache.data && (Date.now() - leaderboardCache.ts < LEADERBOARD_CACHE_DURATION)) {
+            return res.json(leaderboardCache.data);
+        }
+
         // Top 50 Students by Average Score
         const leaderboard = await TestResult.aggregate([
             {
@@ -109,6 +115,9 @@ const getLeaderboard = async (req, res) => {
                 }
             }
         ]);
+
+        // Cache the result
+        leaderboardCache = { data: leaderboard, ts: Date.now() };
 
         res.status(200).json(leaderboard);
     } catch (error) {

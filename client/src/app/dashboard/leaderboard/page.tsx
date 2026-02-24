@@ -1,35 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
 import { Trophy, Medal, Crown, TrendingUp, Users, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useMyRank, useLeaderboard } from '@/hooks/useAPI';
 
 export default function LeaderboardPage() {
-    const [myRankData, setMyRankData] = useState<any>(null);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: myRankData, isLoading: rankLoading } = useMyRank();
+    const { data: leaderboard, isLoading: lbLoading } = useLeaderboard();
+    const loading = rankLoading || lbLoading;
     const router = useRouter();
-
-    useEffect(() => {
-        fetchRankData();
-    }, []);
-
-    const fetchRankData = async () => {
-        try {
-            const [myRankRes, leaderboardRes] = await Promise.all([
-                api.get('/ranks/my-rank'),
-                api.get('/ranks/leaderboard')
-            ]);
-            setMyRankData(myRankRes.data);
-            setLeaderboard(leaderboardRes.data);
-        } catch (error) {
-            console.error('Failed to fetch rank data', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     if (loading) {
         return (
@@ -134,7 +114,7 @@ export default function LeaderboardPage() {
                                 No data available yet. Be the first to take a test!
                             </div>
                         ) : (
-                            leaderboard.map((student, index) => (
+                            (leaderboard || []).map((student: any, index: number) => (
                                 <div
                                     key={student._id}
                                     className={`flex items-center gap-4 p-4 border-b border-slate-800 last:border-0 hover:bg-slate-800/50 transition-colors ${index < 3 ? 'bg-slate-800/30' : ''

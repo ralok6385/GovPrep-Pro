@@ -181,10 +181,26 @@ const getQuestionsBySubject = async (req, res) => {
 // @access  Private/Admin
 const getQuestions = async (req, res) => {
     try {
-        const questions = await Question.find({})
-            .populate('subjectId', 'name')
-            .sort({ createdAt: -1 });
-        res.json(questions);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const [questions, total] = await Promise.all([
+            Question.find({})
+                .populate('subjectId', 'name')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Question.countDocuments({})
+        ]);
+
+        res.json({
+            questions,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
+        });
     } catch (error) {
         console.error('Fetch Questions Error:', error);
         res.status(500).json({ message: 'Failed to fetch questions' });

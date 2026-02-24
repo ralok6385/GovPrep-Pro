@@ -60,7 +60,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex bg-slate-50">
+        <div className="min-h-[100dvh] flex bg-slate-50">
             {/* Left Side - Branding (Enhanced) */}
             <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 text-white p-16 flex-col justify-between relative overflow-hidden">
                 {/* Abstract Background Shapes */}
@@ -124,6 +124,8 @@ export default function LoginPage() {
                                     <input
                                         type="email"
                                         required
+                                        name="email"
+                                        autoComplete="email"
                                         className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all font-medium"
                                         placeholder="name@example.com"
                                         value={email}
@@ -141,6 +143,8 @@ export default function LoginPage() {
                                     <input
                                         type="password"
                                         required
+                                        name="password"
+                                        autoComplete="current-password"
                                         className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all font-medium"
                                         placeholder="••••••••"
                                         value={password}
@@ -164,7 +168,7 @@ export default function LoginPage() {
                             </div>
 
                             <div className="text-sm">
-                                <a href="#" className="font-bold text-indigo-600 hover:text-indigo-500 hover:underline">Forgot password?</a>
+                                <a href="/forgot-password" className="font-bold text-indigo-600 hover:text-indigo-500 hover:underline">Forgot password?</a>
                             </div>
                         </div>
 
