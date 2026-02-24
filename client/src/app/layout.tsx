@@ -46,6 +46,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                  registration.unregister();
+                  console.log('Forcefully unregistered service worker:', registration);
+                }
+              }).catch(function(err) {
+                console.log('Service Worker unregistration failed: ', err);
+              });
+              
+              // Also clear out caches to be absolutely safe
+              caches.keys().then((keyList) => {
+                return Promise.all(keyList.map((key) => caches.delete(key)));
+              });
+            }
+          `
+        }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
