@@ -52,7 +52,7 @@ export default function BattlePage() {
         // Using relative URL '/api' implies same host, but socket.io needs 'http://localhost:5002' explicitly often 
         // unless proxy upgrades websocket. 
         // Let's rely on correct proxy config or explicit URL.
-        const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
+        const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
 
         const newSocket = io(socketUrl, {
             transports: ['websocket'],
