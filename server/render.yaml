@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: govprep-backend
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: NODE_ENV=production node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RENDER_EXTERNAL_URL
+        value: https://govprep-backend.onrender.com

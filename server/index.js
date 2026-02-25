@@ -110,6 +110,28 @@ const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'test') {
     server.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
+
+        // --- KEEP-ALIVE PING (Prevents Render free tier from sleeping) ---
+        // Render spins down free instances after 15 minutes of inactivity.
+        // This self-ping runs every 14 minutes to keep the server permanently awake.
+        if (process.env.NODE_ENV === 'production') {
+            const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+            setInterval(async () => {
+                try {
+                    const https = require('https');
+                    const http = require('http');
+                    const client = SELF_URL.startsWith('https') ? https : http;
+                    client.get(`${SELF_URL}/api/health`, (res) => {
+                        console.log(`[Keep-Alive] Pinged self. Status: ${res.statusCode}`);
+                    }).on('error', (e) => {
+                        console.warn(`[Keep-Alive] Ping failed: ${e.message}`);
+                    });
+                } catch (e) {
+                    console.warn('[Keep-Alive] Ping error:', e.message);
+                }
+            }, 14 * 60 * 1000); // Every 14 minutes
+            console.log('[Keep-Alive] Self-ping scheduler started (every 14 minutes)');
+        }
     });
 }
 

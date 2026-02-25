@@ -14,7 +14,6 @@ export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false);
     const { login, user, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [loadingText, setLoadingText] = useState('Signing In...');
     const router = useRouter();
 
     // Redirect if already logged in
@@ -31,31 +30,15 @@ export default function LoginPage() {
             setEmail(savedEmail);
             setRememberMe(true);
         }
-
-        // --- RENDER FREE TIER OPTIMIZATION ---
-        // Pinging the server silently when the login page loads.
-        // It takes ~50 seconds for a Render free instance to wake up. 
-        // By the time they type their email/password, the server should be awake!
-        try {
-            const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://govprep-backend.onrender.com/api';
-            fetch(`${apiBase}/health`).catch(() => { }); // silent catch
-        } catch (e) { }
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setLoadingText('Connecting...');
-
-        // After 4 seconds, if still loading, update text to inform the user
-        const timeoutId = setTimeout(() => {
-            setLoadingText('Waking up server (takes ~30s)...');
-        }, 4000);
 
         try {
             await login(email, password);
 
-            clearTimeout(timeoutId);
             // Handle Remember Me
             if (rememberMe) {
                 localStorage.setItem('govprep_user_email', email);
@@ -65,10 +48,7 @@ export default function LoginPage() {
 
             toast.success('Welcome back!');
         } catch (err: any) {
-            clearTimeout(timeoutId);
             setLoading(false);
-            setLoadingText('Signing In...');
-
             if (!err.response) {
                 toast.error("Server unreachable. Please check your internet or try again later.");
             } else if (err.response.status === 500) {
@@ -200,7 +180,7 @@ export default function LoginPage() {
                             {loading ? (
                                 <span className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    {loadingText}
+                                    Signing In...
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-2">Sign In <ArrowRight className="w-5 h-5" /></span>
