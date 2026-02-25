@@ -5,8 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Train, CheckCircle2, Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { apiWithRetry, checkServerHealth } from '@/lib/api';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -23,13 +24,15 @@ export default function LoginPage() {
         }
     }, [user, authLoading, router]);
 
-    // Load saved email on mount
+    // Load saved email + proactively wake up Render backend on mount
     useEffect(() => {
         const savedEmail = localStorage.getItem('govprep_user_email');
         if (savedEmail) {
             setEmail(savedEmail);
             setRememberMe(true);
         }
+        // Silent wake-up ping — gives server time to start while user types credentials
+        checkServerHealth();
     }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +40,8 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            await login(email, password);
+            // Use retry wrapper: tries 3 times with 3s → 6s → 12s backoff
+            await apiWithRetry(() => login(email, password), 3, 3000);
 
             // Handle Remember Me
             if (rememberMe) {
@@ -45,16 +49,20 @@ export default function LoginPage() {
             } else {
                 localStorage.removeItem('govprep_user_email');
             }
-
-            toast.success('Welcome back!');
         } catch (err: any) {
             setLoading(false);
+            console.error('[Login Error]', err);
+
             if (!err.response) {
-                toast.error("Server unreachable. Please check your internet or try again later.");
-            } else if (err.response.status === 500) {
-                toast.error("Internal Server Error. Please try again later.");
+                toast.error('Could not reach server. Please try again in a moment.');
+            } else if (err.response.status === 401) {
+                toast.error('Incorrect email or password.');
+            } else if (err.response.status === 503) {
+                toast.error('Server is starting up. Please try again in 30 seconds.');
+            } else if (err.response.status >= 500) {
+                toast.error('Server error. Please try again.');
             } else {
-                toast.error(err.response?.data?.message || 'Login failed. Please check your credentials.');
+                toast.error(err.response?.data?.message || 'Login failed.');
             }
         }
     };

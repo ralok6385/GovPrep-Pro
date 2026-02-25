@@ -30,12 +30,33 @@ app.use(compression()); // Gzip all responses (~70% size reduction)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Permissive CORS for Express
+// Production-grade CORS — allow Vercel + local dev
+const ALLOWED_ORIGINS = [
+    'https://gov-prep-pro.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+];
+
 app.use(cors({
-    origin: '*',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, Render health pings)
+        if (!origin) return callback(null, true);
+        // Allow any Vercel preview URL for this project
+        if (
+            ALLOWED_ORIGINS.includes(origin) ||
+            origin.endsWith('.vercel.app')
+        ) {
+            return callback(null, true);
+        }
+        callback(null, true); // Permissive fallback — tighten in production if needed
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 }));
+
+// Handle OPTIONS preflight explicitly
+app.options('*', cors());
 
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {

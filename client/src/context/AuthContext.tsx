@@ -86,19 +86,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const login = async (email: string, password: string) => {
-        try {
-            const { data } = await api.post('/auth/login', { email, password });
-            localStorage.setItem('token', data.token);
-            // Cache user data locally for instant future loads
-            const { token: _, ...userData } = data;
-            localStorage.setItem('user_data', JSON.stringify(userData));
-            setUser(data);
-            toast.success('Logged in successfully');
-            router.push(data.role === 'admin' ? '/admin/dashboard' : '/dashboard');
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Login failed');
-            throw error;
-        }
+        const { data } = await api.post('/auth/login', { email, password });
+        localStorage.setItem('token', data.token);
+        // Cache user data locally for instant future loads
+        const { token: _, ...userData } = data;
+        localStorage.setItem('user_data', JSON.stringify(userData));
+        setUser(data);
+        toast.success('Welcome back!');
+        router.push(data.role === 'admin' ? '/admin/dashboard' : '/dashboard');
     };
 
     const signup = async (userData: any) => {
