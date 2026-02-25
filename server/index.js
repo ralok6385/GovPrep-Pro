@@ -55,8 +55,8 @@ app.use(cors({
     credentials: true,
 }));
 
-// Handle OPTIONS preflight explicitly
-app.options('*', cors());
+// Handle OPTIONS preflight — Express 5 requires explicit wildcard syntax
+app.options('/{*path}', cors());
 
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
