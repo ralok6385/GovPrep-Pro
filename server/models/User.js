@@ -11,6 +11,7 @@ const userSchema = mongoose.Schema(
             type: String,
             required: true,
             unique: true,
+            index: true, // Faster lookups on login
         },
         avatar: {
             type: String, // URL to profile image
@@ -82,8 +83,8 @@ userSchema.pre('save', async function () {
     if (!this.isModified('password')) {
         return;
     }
-
-    const salt = await bcrypt.genSalt(10);
+    // Rounds 8 is safe and ~4x faster than 10 on low-CPU environments (Render free tier)
+    const salt = await bcrypt.genSalt(8);
     this.password = await bcrypt.hash(this.password, salt);
 });
 

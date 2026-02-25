@@ -1,0 +1,22 @@
+name: Keep Render Backend Alive
+
+on:
+  schedule:
+    # Runs every 5 minutes — prevents Render free tier from sleeping
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend Health Endpoint
+        run: |
+          echo "Pinging Render backend to prevent cold start..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://govprep-backend.onrender.com/api/health)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Backend is awake and healthy!"
+          else
+            echo "⚠️  Backend returned status $STATUS — it may still be warming up."
+          fi

@@ -14,54 +14,58 @@ const generateToken = (id) => {
 const authUser = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log(`[Login Attempt] Email: ${email}`);
 
         // Fail fast if DB not connected
         if (require('mongoose').connection.readyState !== 1) {
-            console.error('[Login Error] DB not ready');
             return res.status(503).json({ message: 'Database connection initializing, please try again.' });
         }
 
-        const user = await User.findOne({ email }).populate('selectedExam');
-        console.log(`[Login Step] User found: ${!!user}`);
+        // Only select fields needed for login — faster query, no populate
+        const user = await User.findOne({ email }).select(
+            '_id name email password role targetExam language avatar streak xp level badges'
+        );
 
-        if (user && (await user.matchPassword(password))) {
-            console.log('[Login Step] Password Matched');
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
 
-            // Streak Calculation (Centralized)
+        // Compare password directly
+        const isMatch = await require('bcryptjs').compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        // ✅ Send response IMMEDIATELY — don't make the user wait for streak/save
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            targetExam: user.targetExam,
+            language: user.language,
+            avatar: user.avatar,
+            streak: user.streak,
+            xp: user.xp,
+            level: user.level,
+            badges: user.badges,
+            token: generateToken(user._id),
+        });
+
+        // Fire background updates AFTER responding (non-blocking)
+        setImmediate(async () => {
             try {
                 const { updateStreak } = require('./gamificationController');
                 await updateStreak(user);
-            } catch (streakError) {
-                console.error('[Login Error] Streak Calculation Failed:', streakError);
+                user.lastLoginDate = new Date();
+                await user.save();
+            } catch (bgErr) {
+                console.error('[Login BG Update Error]:', bgErr.message);
             }
+        });
 
-            user.lastLoginDate = new Date();
-            await user.save();
-            console.log('[Login Step] User Saved');
-
-            res.json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                targetExam: user.targetExam,
-                language: user.language,
-                avatar: user.avatar,
-                streak: user.streak,
-                xp: user.xp,
-                level: user.level,
-                badges: user.badges,
-                token: generateToken(user._id),
-            });
-        } else {
-            console.warn('[Login Failure] Invalid credentials');
-            res.status(401).json({ message: 'Invalid email or password' });
-        }
     } catch (error) {
-        console.error('[Login CRITICAL Error]:', error);
-        console.error(error.stack);
-        res.status(500).json({ message: 'Server error during login', error: error.message });
+        console.error('[Login CRITICAL Error]:', error.message);
+        res.status(500).json({ message: 'Server error during login' });
     }
 };
 
