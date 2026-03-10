@@ -206,107 +206,116 @@ const startTest = async (req, res) => {
 // @route   POST /api/tests/:id/submit
 // @access  Private (Student)
 const submitTest = async (req, res) => {
-    const { responses, tabSwitchWarnings, isAutoSubmitted, completionTimeMinutes } = req.body; // [{ questionId, selectedOption, timeTaken }]
+    try {
+        const { responses = [], tabSwitchWarnings, isAutoSubmitted, completionTimeMinutes } = req.body;
 
-    // Prevent duplicate submissions
-    const existingResult = await TestResult.findOne({ studentId: req.user._id, testId: req.params.id });
-    if (existingResult) {
-        return res.status(409).json({ message: 'You have already submitted this test.', resultId: existingResult._id });
-    }
-
-    const test = await Test.findById(req.params.id).populate('questions');
-
-    if (!test) {
-        return res.status(404).json({ message: 'Test not found' });
-    }
-
-    let score = 0;
-    let correctCount = 0;
-    let wrongCount = 0;
-
-    const processedResponses = test.questions.map((question) => {
-        const resp = responses.find(r => r.questionId === question._id.toString());
-
-        let isCorrect = false;
-        let selectedOption = null;
-        let timeTakenSeconds = 0;
-
-        if (resp) {
-            selectedOption = resp.selectedOption;
-            timeTakenSeconds = resp.timeTakenSeconds || 0;
-
-            if (selectedOption === question.correctOption) {
-                isCorrect = true;
-                score += test.positiveMark;
-                correctCount++;
-            } else if (selectedOption) {
-                // Attempted but wrong
-                score -= test.negativeMark;
-                wrongCount++;
-            }
-            // If selectedOption is null/empty but resp exists, it's a skip (already handled by defaults)
+        // Prevent duplicate submissions
+        const existingResult = await TestResult.findOne({ studentId: req.user._id, testId: req.params.id });
+        if (existingResult) {
+            return res.status(409).json({ message: 'You have already submitted this test.', resultId: existingResult._id });
         }
 
-        return {
-            questionId: question._id,
-            selectedOption,
-            correctOption: question.correctOption, // Store correct answer for review
-            isCorrect,
-            timeTakenSeconds
-        };
-    });
+        const test = await Test.findById(req.params.id).populate('questions');
 
-    const accuracy =
-        processedResponses.length > 0
-            ? (correctCount / processedResponses.length) * 100
-            : 0;
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found' });
+        }
 
-    const result = await TestResult.create({
-        studentId: req.user._id,
-        testId: test._id,
-        score,
-        accuracy,
-        responses: processedResponses,
-        tabSwitchWarnings: tabSwitchWarnings || 0,
-        isAutoSubmitted: isAutoSubmitted || false,
-        completionTimeMinutes: completionTimeMinutes || 0,
-    });
+        let score = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
 
-    // Calculate Rank immediately for storage
-    const allResults = await TestResult.find({ testId: test._id }).select('score').sort({ score: -1 });
-    const allScores = allResults.map(r => r.score);
-    const rank = allScores.indexOf(score) + 1;
-    const totalParticipants = allScores.length;
+        const processedResponses = [];
+        for (const question of test.questions) {
+            if (!question || !question._id) continue; // Skip deleted questions
 
-    // Update with rank
-    await TestResult.findByIdAndUpdate(result._id, { rank, totalParticipants });
+            const resp = responses.find(r => r.questionId === question._id.toString());
 
-    const populatedResult = await TestResult.findById(result._id)
-        .populate('testId')
-        .populate({
-            path: 'responses.questionId',
-            model: 'Question'
+            let isCorrect = false;
+            let selectedOption = null;
+            let timeTakenSeconds = 0;
+
+            if (resp) {
+                selectedOption = resp.selectedOption;
+                timeTakenSeconds = resp.timeTakenSeconds || 0;
+
+                if (selectedOption === question.correctOption) {
+                    isCorrect = true;
+                    score += test.positiveMark;
+                    correctCount++;
+                } else if (selectedOption) {
+                    // Attempted but wrong
+                    score -= test.negativeMark;
+                    wrongCount++;
+                }
+                // If selectedOption is null/empty but resp exists, it's a skip (already handled by defaults)
+            }
+
+            processedResponses.push({
+                questionId: question._id,
+                selectedOption,
+                correctOption: question.correctOption, // Store correct answer for review
+                isCorrect,
+                timeTakenSeconds
+            });
+        }
+
+        const accuracy =
+            processedResponses.length > 0
+                ? (correctCount / processedResponses.length) * 100
+                : 0;
+
+        const result = await TestResult.create({
+            studentId: req.user._id,
+            testId: test._id,
+            score,
+            accuracy,
+            responses: processedResponses,
+            tabSwitchWarnings: tabSwitchWarnings || 0,
+            isAutoSubmitted: isAutoSubmitted || false,
+            completionTimeMinutes: completionTimeMinutes || 0,
         });
 
-    console.log('SUBMIT TEST - Populated Question 0:', populatedResult.responses[0]?.questionId);
+        // Calculate Rank immediately for storage
+        const allResults = await TestResult.find({ testId: test._id }).select('score').sort({ score: -1 });
+        const allScores = allResults.map(r => r.score);
+        const rank = allScores.indexOf(score) + 1;
+        const totalParticipants = allScores.length;
 
-    // --- GAMIFICATION START ---
-    let responseData = populatedResult.toObject();
-    try {
-        const { awardXP } = require('./gamificationController');
-        // Base XP: 50, Plus 1 XP per 1% accuracy
-        const totalXP = 50 + Math.round(result.accuracy || 0);
+        // Update with rank
+        await TestResult.findByIdAndUpdate(result._id, { rank, totalParticipants });
 
-        const gamification = await awardXP(req.user._id, totalXP, 'Test Completion');
-        if (gamification) {
-            responseData.gamification = gamification;
+        const populatedResult = await TestResult.findById(result._id)
+            .populate('testId')
+            .populate({
+                path: 'responses.questionId',
+                model: 'Question'
+            });
+
+        console.log('SUBMIT TEST - Populated Question 0:', populatedResult.responses[0]?.questionId);
+
+        // --- GAMIFICATION START ---
+        let responseData = populatedResult.toObject();
+        try {
+            const { awardXP } = require('./gamificationController');
+            // Base XP: 50, Plus 1 XP per 1% accuracy
+            const totalXP = 50 + Math.round(result.accuracy || 0);
+
+            const gamification = await awardXP(req.user._id, totalXP, 'Test Completion');
+            if (gamification) {
+                responseData.gamification = gamification;
+            }
+        } catch (gamificationError) {
+            console.error('[Gamification Error]', gamificationError);
         }
-    } catch (gamificationError) {
-        console.error('[Gamification Error]', gamificationError);
-    }
-    // --- GAMIFICATION END ---
+        // --- GAMIFICATION END ---
 
-    res.json(responseData);
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('[Submit Test Error]:', error);
+        res.status(500).json({ message: 'Server error during submission', error: error.message });
+    }
 };
 
 // @desc    Get all test results (Admin Analytics)

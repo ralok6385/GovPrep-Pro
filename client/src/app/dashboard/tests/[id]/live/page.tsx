@@ -524,9 +524,16 @@ export default function LiveTestPage() {
 
                     <button
                         onClick={() => setShowSubmitModal(true)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.05] active:scale-95 ml-2"
+                        className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3 rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-xl shadow-emerald-500/30 transition-all hover:scale-[1.05] active:scale-95 ml-2"
                     >
                         Submit Test
+                    </button>
+
+                    <button
+                        onClick={() => setShowSubmitModal(true)}
+                        className="md:hidden bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg ml-1"
+                    >
+                        Submit
                     </button>
 
                     <button onClick={() => setDrawerOpen(true)} className="lg:hidden p-2.5 bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-200 transition-colors">
@@ -684,7 +691,34 @@ export default function LiveTestPage() {
                             <img src="/images/lalan_logo.png" alt="Lalan" className="w-10 h-auto opacity-90 brightness-0 grayscale invert" />
                             <h3 className="font-bold text-slate-800">Question Palette</h3>
                         </div>
-                        <button onClick={() => setDrawerOpen(false)} className="lg:hidden"><X className="w-5 h-5" /></button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    setDrawerOpen(false);
+                                    setShowSubmitModal(true);
+                                }}
+                                className="lg:hidden text-[10px] font-black uppercase bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg"
+                            >
+                                Submit
+                            </button>
+                            <button onClick={() => setDrawerOpen(false)} className="lg:hidden p-1 bg-slate-200 rounded text-slate-600"><X className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+
+                    {/* Mobile Language Toggle */}
+                    <div className="lg:hidden p-3 border-b border-slate-200 bg-white grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => setLanguage('en')}
+                            className={`py-2 rounded-xl text-xs font-black uppercase tracking-tighter transition-all ${language === 'en' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}
+                        >
+                            English
+                        </button>
+                        <button
+                            onClick={() => setLanguage('hi')}
+                            className={`py-2 rounded-xl text-xs font-black uppercase tracking-tighter transition-all ${language === 'hi' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500'}`}
+                        >
+                            हिन्दी
+                        </button>
                     </div>
 
                     {/* User Info (Real-time) */}
@@ -773,7 +807,7 @@ export default function LiveTestPage() {
                         </div>
                     </div>
                 </aside>
-            </div>
+            </div >
 
             {/* Modal & Overlays Section */}
             <>
@@ -863,6 +897,6 @@ export default function LiveTestPage() {
                     )}
                 </div>
             </>
-        </div>
+        </div >
     );
 }
