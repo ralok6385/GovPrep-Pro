@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useParams, useRouter } from 'next/navigation';
@@ -41,6 +41,11 @@ export default function LiveTestPage() {
     const [markedReview, setMarkedReview] = useState<{ [key: string]: boolean }>({});
     const [visited, setVisited] = useState<{ [key: string]: boolean }>({});
     const [bookmarkedQuestions, setBookmarkedQuestions] = useState<{ [key: string]: boolean }>({});
+
+    // Per-question time tracking
+    // Tracks cumulative seconds spent on each question (accumulates across visits)
+    const questionTimeTracker = useRef<{ [key: string]: number }>({});
+    const questionEntryTime = useRef<number>(Date.now());
 
     const [timeLeft, setTimeLeft] = useState(0);
     const [isdrawerOpen, setDrawerOpen] = useState(false);
@@ -303,6 +308,15 @@ export default function LiveTestPage() {
     const currentQ = currentQuestionsList[currentQIndex];
 
     const handleQuestionJump = (idx: number) => {
+        // Record time spent on current question before jumping away
+        if (currentQ) {
+            const now = Date.now();
+            const elapsed = Math.floor((now - questionEntryTime.current) / 1000);
+            questionTimeTracker.current[currentQ._id] = (questionTimeTracker.current[currentQ._id] || 0) + elapsed;
+        }
+        // Reset entry time for the new question
+        questionEntryTime.current = Date.now();
+
         setCurrentQIndex(idx);
         if (currentQuestionsList[idx]) {
             setVisited(prev => ({ ...prev, [currentQuestionsList[idx]._id]: true }));
@@ -382,6 +396,15 @@ export default function LiveTestPage() {
         setSubmitting(true);
 
         try {
+            // Final: record time on the last viewed question
+            if (currentQ) {
+                const now = Date.now();
+                const elapsed = Math.floor((now - questionEntryTime.current) / 1000);
+                questionTimeTracker.current[currentQ._id] = (questionTimeTracker.current[currentQ._id] || 0) + elapsed;
+            }
+
+            const completionTimeMinutes = Math.max(1, Math.ceil((Date.now() - (testStartTime || Date.now())) / 60000));
+
             // Prepare payload for backend
             const responsePayload = {
                 responses: Object.keys(answers).map(qId => {
@@ -391,11 +414,12 @@ export default function LiveTestPage() {
                     return {
                         questionId: qId,
                         selectedOption: ansChar,
-                        timeTakenSeconds: 60 // Defaulting to 60 for now
+                        timeTakenSeconds: questionTimeTracker.current[qId] || 0
                     }
                 }),
                 tabSwitchWarnings: finalWarningCount,
-                isAutoSubmitted: isAutoSubmitted
+                isAutoSubmitted: isAutoSubmitted,
+                completionTimeMinutes
             };
 
             const { data } = await api.post(`/tests/${params.id}/submit`, responsePayload);

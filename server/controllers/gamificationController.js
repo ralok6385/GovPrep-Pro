@@ -79,6 +79,5 @@ const awardXP = async (userId, amount, reason) => {
 
 module.exports = {
     awardXP,
-    calculateLevel,
-    updateStreak
+    calculateLevel
 };

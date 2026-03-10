@@ -1,9 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
-const Question = require('../models/Question'); // Assuming this exists
+const Question = require('../models/Question');
 
 // State (In-memory for prototype, Redis for production)
 let matchmakingQueue = []; // Array of { socketId, userId, name }
-const activeGames = new Map(); // roomId -> { players: [], scores: {}, questions: [] }
+const activeGames = new Map(); // roomId -> { players: [], questions: [], currentRound: 0 }
 
 const findMatch = async (io, socket, userData) => {
     // 1. Remove if already in queue (prevent duplicates)
@@ -26,34 +26,44 @@ const findMatch = async (io, socket, userData) => {
             return findMatch(io, socket, userData);
         }
 
-        // 3. Fetch Questions (Random 5)
-        // For efficiency, just getting random 5 questions from DB
+        // 3. Fetch Questions (Random 5) — keep FULL data server-side
         const questions = await Question.aggregate([{ $sample: { size: 5 } }]);
 
-        // 4. Initialize Game State
+        // 4. Sanitize questions for clients — NEVER send correctOption
+        const sanitizedQuestions = questions.map(q => ({
+            _id: q._id,
+            text: q.text,
+            textHindi: q.textHindi,
+            options: q.options.map(o => ({ id: o.id, text: o.text, textHindi: o.textHindi })),
+            // NO correctOption, NO explanation
+        }));
+
+        // 5. Initialize Game State (server keeps full questions with answers)
         const gameState = {
             roomId,
             players: [
-                { id: socket.id, userId: userData.userId, name: userData.name, score: 0, avatar: userData.avatar },
-                { id: opponent.socketId, userId: opponent.userId, name: opponent.name, score: 0, avatar: opponent.avatar }
+                { id: socket.id, odii: userData.userId, name: userData.name, score: 0, avatar: userData.avatar, answeredRounds: new Set() },
+                { id: opponent.socketId, odii: opponent.userId, name: opponent.name, score: 0, avatar: opponent.avatar, answeredRounds: new Set() }
             ],
-            questions,
-            currentQuestionIndex: 0,
+            questions, // FULL questions with correctOption — server-only
+            currentRound: 0,
             startTime: Date.now()
         };
         activeGames.set(roomId, gameState);
 
-        // 5. Notify Players
+        // 6. Notify Players
         io.to(roomId).emit('match_found', {
             roomId,
-            opponent: (socket.id === roomId) ? null : "Opponent" // Client will parse exact opponent details
+            opponent: "Opponent"
         });
 
-        // 6. Start Game (Send first question after brief delay)
+        // 7. Start Game — send SANITIZED questions only
         setTimeout(() => {
             io.to(roomId).emit('game_start', {
-                questions: questions,
-                players: gameState.players
+                questions: sanitizedQuestions,
+                players: gameState.players.map(p => ({
+                    id: p.id, odii: p.odii, name: p.name, score: p.score, avatar: p.avatar
+                }))
             });
         }, 1500);
 
@@ -71,31 +81,59 @@ const findMatch = async (io, socket, userData) => {
     }
 };
 
-const submitAnswer = (io, socket, { roomId, points }) => {
+/**
+ * Server-side answer validation.
+ * Client sends: { roomId, questionId, selectedOption, timeLeft }
+ * Server validates correctness and calculates score.
+ */
+const submitAnswer = (io, socket, { roomId, questionId, selectedOption, timeLeft }) => {
     const game = activeGames.get(roomId);
     if (!game) return;
 
-    // Update Score
+    // Find the player
     const player = game.players.find(p => p.id === socket.id);
-    if (player) {
-        player.score += points; // Points calc handled by client (e.g. time based) or verify here
+    if (!player) return;
+
+    // Find the question (server has full data with correctOption)
+    const question = game.questions.find(q => q._id.toString() === questionId);
+    if (!question) return;
+
+    // Prevent double-answering the same question
+    const roundKey = questionId;
+    if (player.answeredRounds.has(roundKey)) return;
+    player.answeredRounds.add(roundKey);
+
+    // Server-side scoring — validate answer correctness HERE
+    let points = 0;
+    const isCorrect = selectedOption === question.correctOption;
+    if (isCorrect) {
+        const clampedTimeLeft = Math.max(0, Math.min(15, timeLeft || 0)); // Sanitize timeLeft (0-15)
+        points = 10 + Math.ceil(clampedTimeLeft / 2); // Speed bonus
     }
 
-    // Broadcast Update
+    player.score += points;
+
+    // Broadcast Updated Scores (without exposing answers)
     io.to(roomId).emit('score_update', {
-        players: game.players
+        players: game.players.map(p => ({
+            id: p.id, odii: p.odii, name: p.name, score: p.score, avatar: p.avatar
+        }))
     });
 
-    // Check for game over condition if needed (e.g. all answered)
-    // For now, client handles "End of Quiz" submission
+    // Send result BACK to the answering player only (so they know if correct)
+    socket.emit('answer_result', {
+        questionId,
+        isCorrect,
+        correctOption: question.correctOption, // Reveal AFTER answering
+        pointsEarned: points
+    });
 };
 
 const handleDisconnect = (socket) => {
     // Remove from queue
     matchmakingQueue = matchmakingQueue.filter(u => u.socketId !== socket.id);
 
-    // Handle Active Games?
-    // If in game, notify opponent of win by default?
+    // Handle Active Games
     for (const [roomId, game] of activeGames.entries()) {
         const isPlayer = game.players.find(p => p.id === socket.id);
         if (isPlayer) {

@@ -3,23 +3,18 @@ const Test = require('../models/Test');
 const Question = require('../models/Question');
 const Content = require('../models/Content');
 const TestResult = require('../models/TestResult');
+const { caches } = require('../utils/cache');
 
 // @desc    Get Admin Dashboard Stats including Real-Time KPIs and Activity
 // @route   GET /api/analytics/dashboard
 // @access  Private/Admin
 const mongoose = require('mongoose');
 
-// In-memory cache for analytics
-let dashboardCache = {
-    data: null,
-    lastFetched: 0
-};
-const CACHE_DURATION = 60 * 1000; // 60 seconds
-
 const getDashboardStats = async (req, res) => {
-    const now = Date.now();
-    if (dashboardCache.data && (now - dashboardCache.lastFetched < CACHE_DURATION)) {
-        return res.json(dashboardCache.data);
+    // Check SmartCache
+    const cachedDashboard = caches.dashboard.get('admin_dashboard');
+    if (cachedDashboard) {
+        return res.json(cachedDashboard);
     }
 
     // 0. Fail fast if DB not connected
@@ -229,11 +224,7 @@ const getDashboardStats = async (req, res) => {
             weakAreas // [NEW] Real Aggregated Data
         };
 
-        // Cache the successful result
-        dashboardCache = {
-            data: dashboardData,
-            lastFetched: Date.now()
-        };
+        // Cache the successful result\n        caches.dashboard.set('admin_dashboard', dashboardData);
 
         res.json(dashboardData);
 
@@ -247,18 +238,14 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
-// Per-student analytics cache (keyed by student ID)
-const studentAnalyticsCache = {};
-const STUDENT_CACHE_DURATION = 60 * 1000; // 60 seconds
-
 const getStudentAnalytics = async (req, res) => {
     try {
         const studentId = req.user._id.toString();
 
-        // Check cache
-        const cached = studentAnalyticsCache[studentId];
-        if (cached && (Date.now() - cached.ts < STUDENT_CACHE_DURATION)) {
-            return res.json(cached.data);
+        // Check SmartCache
+        const cached = caches.studentAnalytics.get(`student_${studentId}`);
+        if (cached) {
+            return res.json(cached);
         }
 
         // 1. Basic Stats
@@ -355,7 +342,8 @@ const getStudentAnalytics = async (req, res) => {
         };
 
         // Cache it
-        studentAnalyticsCache[studentId] = { data: responseData, ts: Date.now() };
+        // Cache AFTER sending response
+        caches.studentAnalytics.set(`student_${studentId}`, responseData);
 
         res.json(responseData);
 
@@ -365,18 +353,15 @@ const getStudentAnalytics = async (req, res) => {
     }
 };
 
-// Weakness analysis cache
-const weaknessCache = {};
-const WEAKNESS_CACHE_DURATION = 60 * 1000;
 
 const getWeaknessAnalysis = async (req, res) => {
     try {
         const studentId = req.user._id.toString();
 
-        // Check cache
-        const cached = weaknessCache[studentId];
-        if (cached && (Date.now() - cached.ts < WEAKNESS_CACHE_DURATION)) {
-            return res.json(cached.data);
+        // Check SmartCache
+        const cached = caches.weakness.get(`weakness_${studentId}`);
+        if (cached) {
+            return res.json(cached);
         }
         const subjectStats = await TestResult.aggregate([
             { $match: { studentId: new mongoose.Types.ObjectId(studentId) } },
@@ -458,10 +443,7 @@ const getWeaknessAnalysis = async (req, res) => {
         });
 
         // Cache AFTER sending response
-        weaknessCache[studentId] = {
-            data: { radarData: subjectStats, difficultyAnalysis: difficultyStats, weakAreas, strongAreas },
-            ts: Date.now()
-        };
+        caches.weakness.set(`weakness_${studentId}`, { radarData: subjectStats, difficultyAnalysis: difficultyStats, weakAreas, strongAreas });
 
     } catch (error) {
         console.error('[Weakness Analysis Error]:', error);
@@ -469,4 +451,127 @@ const getWeaknessAnalysis = async (req, res) => {
     }
 };
 
-module.exports = { getDashboardStats, getStudentAnalytics, getWeaknessAnalysis };
+// @desc    Get test comparison with topper and average
+// @route   GET /api/analytics/test-comparison/:testId
+// @access  Private (Student)
+const getTestComparison = async (req, res) => {
+    try {
+        const studentId = req.user._id;
+        const { testId } = req.params;
+
+        const cacheKey = `${studentId}_${testId}`;
+        const cachedComparison = caches.testComparison.get(cacheKey);
+        if (cachedComparison) {
+            return res.json(cachedComparison);
+        }
+
+        // Get all results for this test
+        const allResults = await TestResult.find({ testId })
+            .populate('studentId', 'name avatar')
+            .sort({ score: -1 })
+            .lean();
+
+        if (allResults.length === 0) {
+            return res.status(404).json({ message: 'No results found for this test' });
+        }
+
+        // Find student's result
+        const myResult = allResults.find(r => r.studentId?._id?.toString() === studentId.toString());
+        if (!myResult) {
+            return res.status(404).json({ message: 'Your result not found for this test' });
+        }
+
+        // Topper result
+        const topperResult = allResults[0];
+
+        // Calculate averages
+        const totalParticipants = allResults.length;
+        const avgScore = Math.round(allResults.reduce((sum, r) => sum + r.score, 0) / totalParticipants);
+        const avgAccuracy = Math.round(allResults.reduce((sum, r) => sum + (r.accuracy || 0), 0) / totalParticipants);
+        const avgTimeMinutes = Math.round(allResults.reduce((sum, r) => sum + (r.completionTimeMinutes || 0), 0) / totalParticipants);
+
+        // Student's rank (1-indexed)
+        const myRank = allResults.findIndex(r => r.studentId?._id?.toString() === studentId.toString()) + 1;
+
+        // Percentile calculation
+        const percentile = Math.round(((totalParticipants - myRank) / totalParticipants) * 100);
+
+        // Per-question time analysis (from student's responses)
+        const timeAnalysis = {
+            fastest: null,
+            slowest: null,
+            avgTimePerQuestion: 0,
+        };
+
+        if (myResult.responses && myResult.responses.length > 0) {
+            const responsesWithTime = myResult.responses.filter(r => r.timeTakenSeconds > 0);
+            if (responsesWithTime.length > 0) {
+                const sorted = [...responsesWithTime].sort((a, b) => a.timeTakenSeconds - b.timeTakenSeconds);
+                timeAnalysis.fastest = sorted[0].timeTakenSeconds;
+                timeAnalysis.slowest = sorted[sorted.length - 1].timeTakenSeconds;
+                timeAnalysis.avgTimePerQuestion = Math.round(
+                    responsesWithTime.reduce((s, r) => s + r.timeTakenSeconds, 0) / responsesWithTime.length
+                );
+            }
+        }
+
+        // Topper's time analysis
+        const topperTimeAnalysis = { avgTimePerQuestion: 0 };
+        if (topperResult.responses && topperResult.responses.length > 0) {
+            const topperWithTime = topperResult.responses.filter(r => r.timeTakenSeconds > 0);
+            if (topperWithTime.length > 0) {
+                topperTimeAnalysis.avgTimePerQuestion = Math.round(
+                    topperWithTime.reduce((s, r) => s + r.timeTakenSeconds, 0) / topperWithTime.length
+                );
+            }
+        }
+
+        // Top 5 leaderboard
+        const leaderboard = allResults.slice(0, 5).map((r, idx) => ({
+            rank: idx + 1,
+            name: r.studentId?.name || 'Student',
+            avatar: r.studentId?.avatar,
+            score: r.score,
+            accuracy: r.accuracy || 0,
+        }));
+
+        const responseData = {
+            myResult: {
+                score: myResult.score,
+                maxScore: myResult.maxScore,
+                correct: myResult.correct,
+                incorrect: myResult.incorrect,
+                unattempted: myResult.unattempted,
+                accuracy: myResult.accuracy,
+                completionTimeMinutes: myResult.completionTimeMinutes,
+                rank: myRank,
+                percentile,
+                timeAnalysis,
+            },
+            topper: {
+                name: topperResult.studentId?.name || 'Topper',
+                avatar: topperResult.studentId?.avatar,
+                score: topperResult.score,
+                accuracy: topperResult.accuracy || 0,
+                completionTimeMinutes: topperResult.completionTimeMinutes,
+                timeAnalysis: topperTimeAnalysis,
+            },
+            average: {
+                score: avgScore,
+                accuracy: avgAccuracy,
+                completionTimeMinutes: avgTimeMinutes,
+            },
+            totalParticipants,
+            leaderboard,
+        };
+
+        caches.testComparison.set(cacheKey, responseData);
+        res.json(responseData);
+
+    } catch (error) {
+        console.error('[Test Comparison Error]:', error);
+        res.status(500).json({ message: 'Failed to generate comparison' });
+    }
+};
+
+module.exports = { getDashboardStats, getStudentAnalytics, getWeaknessAnalysis, getTestComparison };

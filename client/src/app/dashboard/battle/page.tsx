@@ -3,13 +3,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { io, Socket } from 'socket.io-client';
-import { Loader2, Swords, Trophy, XCircle, CheckCircle, Zap } from 'lucide-react';
+import { Loader2, Swords, Trophy, XCircle, CheckCircle, Zap, Clock } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 
 // Types
 interface Player {
     id: string; // socket id
-    userId: string;
+    odii: string;
     name: string;
     score: number;
     avatar?: string;
@@ -19,7 +19,14 @@ interface Question {
     _id: string;
     text: string;
     options: { id: string; text: string }[];
+    // correctOption is NEVER sent from server
+}
+
+interface AnswerResult {
+    questionId: string;
+    isCorrect: boolean;
     correctOption: string;
+    pointsEarned: number;
 }
 
 export default function BattlePage() {
@@ -32,26 +39,21 @@ export default function BattlePage() {
     const [players, setPlayers] = useState<Player[]>([]);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [currentQIndex, setCurrentQIndex] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(10); // 10s per question
+    const [timeLeft, setTimeLeft] = useState(15);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
 
+    // Server-validated answer result
+    const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+
     // Derived
-    const me = players.find(p => p.userId === user?._id);
-    const opponent = players.find(p => p.userId !== user?._id);
+    const me = players.find(p => p.odii === user?._id);
+    const opponent = players.find(p => p.odii !== user?._id);
     const currentQuestion = questions[currentQIndex];
 
     useEffect(() => {
         if (!user) return;
 
-        // Init Socket
-        // Use window.location.origin to check if we are on localhost
-        // But backend is on 5002.
-        // Assuming proxy works or hardcode for now based on env
-
-        // Using relative URL '/api' implies same host, but socket.io needs 'http://localhost:5002' explicitly often 
-        // unless proxy upgrades websocket. 
-        // Let's rely on correct proxy config or explicit URL.
         const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
 
         const newSocket = io(socketUrl, {
@@ -63,22 +65,27 @@ export default function BattlePage() {
 
         newSocket.on('match_found', (data) => {
             setRoomId(data.roomId);
-            setStatus('searching'); // Still searching visually until game_start
+            setStatus('searching');
         });
 
         newSocket.on('game_start', (data) => {
             setQuestions(data.questions);
             setPlayers(data.players);
             setStatus('playing');
-            // Start Timer logic here? Or rely on useEffect
             setCurrentQIndex(0);
             setTimeLeft(15);
             setIsAnswered(false);
             setSelectedOption(null);
+            setAnswerResult(null);
         });
 
         newSocket.on('score_update', (data) => {
             setPlayers(data.players);
+        });
+
+        // Server tells us if our answer was correct
+        newSocket.on('answer_result', (data: AnswerResult) => {
+            setAnswerResult(data);
         });
 
         newSocket.on('opponent_disconnected', () => {
@@ -101,7 +108,6 @@ export default function BattlePage() {
             const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
             return () => clearTimeout(timer);
         } else if (timeLeft === 0 && !isAnswered) {
-            // Time out - Auto submit wrong
             handleAnswer('TIMEOUT');
         }
     }, [timeLeft, status, isAnswered]);
@@ -121,33 +127,28 @@ export default function BattlePage() {
         setIsAnswered(true);
         setSelectedOption(optionId);
 
-        let points = 0;
-        const correct = currentQuestion.correctOption;
-
-        if (optionId === correct) {
-            // Calculate score based on speed? 
-            // Simple: 10 points
-            points = 10 + Math.ceil(timeLeft / 2); // Speed bonus
-        }
-
-        if (socket && roomId) {
+        // Send answer to SERVER for validation — NO client-side scoring
+        if (socket && roomId && currentQuestion) {
             socket.emit('submit_answer', {
                 roomId,
-                points
+                questionId: currentQuestion._id,
+                selectedOption: optionId === 'TIMEOUT' ? null : optionId,
+                timeLeft: timeLeft
             });
         }
 
-        // Next Question Delay
+        // Next Question Delay — wait for server result then advance
         setTimeout(() => {
             if (currentQIndex < questions.length - 1) {
                 setCurrentQIndex(prev => prev + 1);
                 setTimeLeft(15);
                 setIsAnswered(false);
                 setSelectedOption(null);
+                setAnswerResult(null);
             } else {
                 setStatus('game_over');
             }
-        }, 2000); // 2s delay to show result
+        }, 2000);
     };
 
     // View: Idle
@@ -212,7 +213,10 @@ export default function BattlePage() {
                         </div>
                     </div>
 
-                    <div className="text-2xl font-black text-slate-700">VS</div>
+                    <div className="flex flex-col items-center">
+                        <div className="text-2xl font-black text-slate-700">VS</div>
+                        <div className="text-[10px] text-slate-600 font-bold mt-1">Q{currentQIndex + 1}/{questions.length}</div>
+                    </div>
 
                     <div className="flex items-center gap-3 text-right">
                         <div>
@@ -226,11 +230,15 @@ export default function BattlePage() {
                 {/* Question Area */}
                 <div className="flex-1 max-w-2xl mx-auto w-full flex flex-col justify-center pb-20">
                     {/* Timer */}
-                    <div className="w-full h-2 bg-slate-800 rounded-full mb-8 overflow-hidden">
-                        <div
-                            className={`h-full transition-all duration-1000 ease-linear ${timeLeft < 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                            style={{ width: `${(timeLeft / 15) * 100}%` }}
-                        ></div>
+                    <div className="flex items-center gap-3 mb-6">
+                        <Clock className={`w-5 h-5 ${timeLeft < 5 ? 'text-red-500 animate-pulse' : 'text-slate-400'}`} />
+                        <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full transition-all duration-1000 ease-linear rounded-full ${timeLeft < 5 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${(timeLeft / 15) * 100}%` }}
+                            ></div>
+                        </div>
+                        <span className={`text-lg font-black tabular-nums w-8 text-right ${timeLeft < 5 ? 'text-red-500' : 'text-slate-300'}`}>{timeLeft}</span>
                     </div>
 
                     <h2 className="text-2xl md:text-3xl font-bold mb-8 leading-tight">
@@ -241,13 +249,22 @@ export default function BattlePage() {
                         {currentQuestion.options.map((opt) => {
                             let optionClass = "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300";
 
-                            // Reveal logic
-                            if (isAnswered) {
-                                if (opt.id === currentQuestion.correctOption) optionClass = "bg-emerald-500/20 border-emerald-500 text-emerald-400";
-                                else if (opt.id === selectedOption) optionClass = "bg-red-500/20 border-red-500 text-red-400";
-                                else optionClass = "bg-slate-800/50 opacity-50 border-transparent";
-                            } else if (selectedOption === opt.id) {
-                                optionClass = "bg-indigo-600 border-indigo-500 text-white";
+                            if (isAnswered && answerResult) {
+                                // Server told us the result — use server's correctOption
+                                if (opt.id === answerResult.correctOption) {
+                                    optionClass = "bg-emerald-500/20 border-emerald-500 text-emerald-400";
+                                } else if (opt.id === selectedOption) {
+                                    optionClass = "bg-red-500/20 border-red-500 text-red-400";
+                                } else {
+                                    optionClass = "bg-slate-800/50 opacity-50 border-transparent";
+                                }
+                            } else if (isAnswered && !answerResult) {
+                                // Waiting for server response — show selection only
+                                if (opt.id === selectedOption) {
+                                    optionClass = "bg-indigo-600 border-indigo-500 text-white animate-pulse";
+                                } else {
+                                    optionClass = "bg-slate-800/50 opacity-50 border-transparent";
+                                }
                             }
 
                             return (
@@ -258,12 +275,19 @@ export default function BattlePage() {
                                     className={`p-5 rounded-xl border-2 text-left font-semibold text-lg transition-all flex justify-between items-center ${optionClass}`}
                                 >
                                     {opt.text}
-                                    {isAnswered && opt.id === currentQuestion.correctOption && <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                                    {isAnswered && opt.id === selectedOption && opt.id !== currentQuestion.correctOption && <XCircle className="w-5 h-5 text-red-500" />}
+                                    {isAnswered && answerResult && opt.id === answerResult.correctOption && <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                                    {isAnswered && answerResult && opt.id === selectedOption && opt.id !== answerResult.correctOption && <XCircle className="w-5 h-5 text-red-500" />}
                                 </button>
                             )
                         })}
                     </div>
+
+                    {/* Points Feedback */}
+                    {answerResult && (
+                        <div className={`mt-6 text-center py-3 rounded-xl font-bold text-sm ${answerResult.isCorrect ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                            {answerResult.isCorrect ? `✅ Correct! +${answerResult.pointsEarned} points` : '❌ Wrong answer!'}
+                        </div>
+                    )}
                 </div>
             </div>
         );

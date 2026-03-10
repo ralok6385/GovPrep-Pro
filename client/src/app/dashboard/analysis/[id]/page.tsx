@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Sparkles, Zap, FileText, TrendingUp, RotateCcw, Home, CheckCircle, AlertCircle, AlertOctagon, Target, Clock, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Sparkles, Zap, FileText, TrendingUp, RotateCcw, Home, CheckCircle, AlertCircle, AlertOctagon, Target, Clock, BookOpen, ChevronLeft, ChevronRight, Users, Crown, Medal } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -21,6 +21,8 @@ export default function AnalysisPage() {
     const [mounted, setMounted] = useState(false);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [solutionFilter, setSolutionFilter] = useState<'all' | 'correct' | 'wrong' | 'unattempted'>('all');
+    const [comparison, setComparison] = useState<any>(null);
+    const [compLoading, setCompLoading] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -31,6 +33,19 @@ export default function AnalysisPage() {
             try {
                 const { data } = await api.get(`/tests/results/${params.id}`);
                 setResult(data);
+                // Also fetch topper comparison
+                if (data.testId?._id || data.testId) {
+                    const testIdStr = typeof data.testId === 'object' ? data.testId._id : data.testId;
+                    setCompLoading(true);
+                    try {
+                        const { data: compData } = await api.get(`/analytics/test-comparison/${testIdStr}`);
+                        setComparison(compData);
+                    } catch (compErr) {
+                        console.warn('Comparison data not available:', compErr);
+                    } finally {
+                        setCompLoading(false);
+                    }
+                }
             } catch (err) {
                 const savedResult = localStorage.getItem(`test_result_${params.id}`);
                 if (savedResult) {
@@ -456,6 +471,112 @@ export default function AnalysisPage() {
                         )}
                     </div>
                 </div>
+
+                {/* Topper Comparison Section */}
+                {comparison && (
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 mb-8">
+                        <h3 className="font-black text-slate-800 dark:text-white text-sm uppercase tracking-widest mb-6 border-b border-slate-50 dark:border-slate-800 pb-4 flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-amber-500" />
+                            Topper Comparison
+                        </h3>
+
+                        {/* Rank & Percentile */}
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-2xl text-center">
+                                <Medal className="w-5 h-5 text-indigo-600 dark:text-indigo-400 mx-auto mb-1" />
+                                <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400">#{comparison.myResult.rank}</p>
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Your Rank</p>
+                            </div>
+                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl text-center">
+                                <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
+                                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{comparison.myResult.percentile}%</p>
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Percentile</p>
+                            </div>
+                            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl text-center">
+                                <Users className="w-5 h-5 text-slate-600 dark:text-slate-400 mx-auto mb-1" />
+                                <p className="text-2xl font-black text-slate-700 dark:text-slate-300">{comparison.totalParticipants}</p>
+                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Students</p>
+                            </div>
+                        </div>
+
+                        {/* Score Comparison Bars */}
+                        <div className="space-y-4 mb-6">
+                            {[{ label: 'You', score: comparison.myResult.score, max: comparison.topper.score, color: 'indigo', accuracy: comparison.myResult.accuracy },
+                            { label: 'Topper', score: comparison.topper.score, max: comparison.topper.score, color: 'amber', accuracy: comparison.topper.accuracy, name: comparison.topper.name },
+                            { label: 'Average', score: comparison.average.score, max: comparison.topper.score, color: 'slate', accuracy: comparison.average.accuracy }].map((item) => (
+                                <div key={item.label}>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <div className="flex items-center gap-2">
+                                            {item.label === 'Topper' && <Crown className="w-3 h-3 text-amber-500" />}
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{item.label}</span>
+                                            {item.name && <span className="text-[10px] text-slate-400">({item.name})</span>}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs font-black text-slate-800 dark:text-white tabular-nums">{item.score} marks</span>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${item.accuracy >= 70 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+                                                {item.accuracy}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div className={`h-full rounded-full transition-all duration-1000 ${item.color === 'indigo' ? 'bg-indigo-500' : item.color === 'amber' ? 'bg-amber-500' : 'bg-slate-400'}`} style={{ width: `${item.max > 0 ? Math.round((item.score / item.max) * 100) : 0}%` }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Time Analysis */}
+                        {comparison.myResult.timeAnalysis.avgTimePerQuestion > 0 && (
+                            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6">
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1"><Clock className="w-3 h-3" /> Time Per Question</h4>
+                                <div className="grid grid-cols-3 gap-3 text-center">
+                                    <div>
+                                        <p className="text-lg font-black text-emerald-600">{comparison.myResult.timeAnalysis.fastest}s</p>
+                                        <p className="text-[9px] text-slate-400 font-bold">Fastest</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-black text-indigo-600">{comparison.myResult.timeAnalysis.avgTimePerQuestion}s</p>
+                                        <p className="text-[9px] text-slate-400 font-bold">Avg (You)</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-lg font-black text-amber-600">{comparison.topper.timeAnalysis.avgTimePerQuestion}s</p>
+                                        <p className="text-[9px] text-slate-400 font-bold">Avg (Topper)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Mini Leaderboard */}
+                        {comparison.leaderboard && comparison.leaderboard.length > 0 && (
+                            <div>
+                                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Top 5 Leaderboard</h4>
+                                <div className="space-y-2">
+                                    {comparison.leaderboard.map((entry: any) => (
+                                        <div key={entry.rank} className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${entry.rank <= 3 ? 'bg-amber-50/50 dark:bg-amber-900/10' : 'bg-slate-50 dark:bg-slate-800/30'}`}>
+                                            <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${entry.rank === 1 ? 'bg-amber-500 text-white' : entry.rank === 2 ? 'bg-slate-400 text-white' : entry.rank === 3 ? 'bg-amber-700 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+                                                {entry.rank}
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{entry.name}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-black text-slate-800 dark:text-white tabular-nums">{entry.score}</p>
+                                                <p className="text-[9px] text-slate-400 font-bold">{entry.accuracy}%</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {compLoading && (
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 mb-8 text-center">
+                        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-xs text-slate-400 font-bold">Loading topper comparison...</p>
+                    </div>
+                )}
 
                 <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 mb-8">
                     <h3 className="font-black text-slate-800 dark:text-white text-sm uppercase tracking-widest mb-6 border-b border-slate-50 dark:border-slate-800 pb-4">Test Summary</h3>

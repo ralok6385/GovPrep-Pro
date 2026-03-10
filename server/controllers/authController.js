@@ -73,56 +73,64 @@ const authUser = async (req, res) => {
 // @route   POST /api/auth/signup
 // @access  Public
 const registerUser = async (req, res) => {
-    const { name, email, password, phone, targetExam, language } = req.body;
+    try {
+        const { name, email, password, phone, targetExam, language } = req.body;
 
-    const userExists = await User.findOne({ email });
+        const userExists = await User.findOne({ email });
 
-    if (userExists) {
-        return res.status(400).json({ message: 'User already exists' });
-    }
+        if (userExists) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
 
-    const targetExamSlugMap = {
-        'NTPC': 'rrb-ntpc',
-        'Group D': 'rrb-group-d',
-        'ALP': 'rrb-alp',
-        'JE': 'rrb-je'
-    };
+        const targetExamSlugMap = {
+            'NTPC': 'rrb-ntpc',
+            'Group D': 'rrb-group-d',
+            'ALP': 'rrb-alp',
+            'JE': 'rrb-je'
+        };
 
-    const examSlug = targetExamSlugMap[targetExam] || 'rrb-ntpc';
-    const exam = await require('../models/Exam').findOne({ slug: examSlug });
+        const examSlug = targetExamSlugMap[targetExam] || 'rrb-ntpc';
+        const exam = await require('../models/Exam').findOne({ slug: examSlug });
 
-    const user = await User.create({
-        name,
-        email,
-        password,
-        phone,
-        targetExam: targetExam || 'NTPC', // Default
-        language: language || 'hi', // Default Hindi
-        selectedExam: exam ? exam._id : null,
-        streak: 1, // Start with 1 day streak
-        lastActiveDate: new Date(),
-        xp: 0,
-        level: 1,
-        badges: []
-    });
-
-    if (user) {
-        res.status(201).json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            targetExam: user.targetExam,
-            language: user.language,
-            avatar: user.avatar,
-            xp: user.xp,
-            level: user.level,
-            badges: user.badges,
-            streak: user.streak,
-            token: generateToken(user._id),
+        const user = await User.create({
+            name,
+            email,
+            password,
+            phone,
+            targetExam: targetExam || 'NTPC',
+            language: language || 'hi',
+            selectedExam: exam ? exam._id : null,
+            streak: 1,
+            lastActiveDate: new Date(),
+            xp: 0,
+            level: 1,
+            badges: []
         });
-    } else {
-        res.status(400).json({ message: 'Invalid user data' });
+
+        if (user) {
+            res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                targetExam: user.targetExam,
+                language: user.language,
+                avatar: user.avatar,
+                xp: user.xp,
+                level: user.level,
+                badges: user.badges,
+                streak: user.streak,
+                token: generateToken(user._id),
+            });
+        } else {
+            res.status(400).json({ message: 'Invalid user data' });
+        }
+    } catch (error) {
+        console.error('[Register CRITICAL Error]:', error.message);
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'An account with this email already exists' });
+        }
+        res.status(500).json({ message: 'Server error during registration' });
     }
 };
 
@@ -303,7 +311,18 @@ const toggleUserStatus = async (req, res) => {
 
 
 
-// @desc    Request password reset (verify identity via email + phone)
+// In-memory OTP store (use Redis in production)
+const resetOTPStore = new Map(); // email -> { otp, expiresAt, userId }
+
+// Cleanup expired OTPs periodically (every 5 minutes)
+setInterval(() => {
+    const now = Date.now();
+    for (const [email, data] of resetOTPStore.entries()) {
+        if (now > data.expiresAt) resetOTPStore.delete(email);
+    }
+}, 5 * 60 * 1000);
+
+// @desc    Request password reset (verify identity via email + phone, send OTP)
 // @route   POST /api/auth/forgot-password
 // @access  Public
 const forgotPassword = async (req, res) => {
@@ -317,7 +336,8 @@ const forgotPassword = async (req, res) => {
         const user = await User.findOne({ email: email.toLowerCase().trim(), isDeleted: { $ne: true } });
 
         if (!user) {
-            return res.status(404).json({ message: 'No account found with this email' });
+            // Don't reveal whether email exists — generic message
+            return res.status(200).json({ message: 'If this account exists, a reset code has been sent.' });
         }
 
         // Verify phone matches (security check)
@@ -328,16 +348,31 @@ const forgotPassword = async (req, res) => {
             return res.status(400).json({ message: 'Phone number does not match our records' });
         }
 
-        // Generate a time-limited reset token (15 minutes)
-        const resetToken = jwt.sign(
-            { id: user._id, purpose: 'password_reset' },
-            process.env.JWT_SECRET,
-            { expiresIn: '15m' }
-        );
+        // Rate limit: prevent frequent OTP requests
+        const existing = resetOTPStore.get(email.toLowerCase());
+        if (existing && Date.now() - (existing.createdAt || 0) < 60000) {
+            return res.status(429).json({ message: 'Please wait 60 seconds before requesting another code.' });
+        }
 
+        // Generate 6-digit OTP
+        const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+        // Store OTP with 15-minute expiry
+        resetOTPStore.set(email.toLowerCase(), {
+            otp,
+            userId: user._id,
+            expiresAt: Date.now() + 15 * 60 * 1000,
+            createdAt: Date.now(),
+            attempts: 0
+        });
+
+        // In production, send OTP via email/SMS here.
+        console.log(`[Password Reset OTP] Email: ${email} | OTP: ${otp}`);
+
+        const maskedPhone = '****' + inputPhone.slice(-4);
         res.json({
-            message: 'Identity verified. You can now reset your password.',
-            resetToken,
+            message: `A 6-digit verification code has been sent. Check your registered phone (${maskedPhone}).`,
+            ...(process.env.NODE_ENV !== 'production' && { devOTP: otp })
         });
     } catch (error) {
         console.error('[Forgot Password Error]:', error);
@@ -345,40 +380,53 @@ const forgotPassword = async (req, res) => {
     }
 };
 
-// @desc    Reset password with token
+// @desc    Reset password with OTP verification
 // @route   POST /api/auth/reset-password
-// @access  Public (with valid reset token)
+// @access  Public (with valid OTP)
 const resetPassword = async (req, res) => {
     try {
-        const { resetToken, newPassword } = req.body;
+        const { email, otp, newPassword } = req.body;
 
-        if (!resetToken || !newPassword) {
-            return res.status(400).json({ message: 'Reset token and new password are required' });
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ message: 'Email, verification code, and new password are required' });
         }
 
         if (newPassword.length < 6) {
             return res.status(400).json({ message: 'Password must be at least 6 characters' });
         }
 
-        // Verify token
-        let decoded;
-        try {
-            decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
-        } catch (err) {
-            return res.status(400).json({ message: 'Reset link has expired. Please try again.' });
+        const storedData = resetOTPStore.get(email.toLowerCase());
+
+        if (!storedData) {
+            return res.status(400).json({ message: 'No reset request found. Please request a new code.' });
         }
 
-        if (decoded.purpose !== 'password_reset') {
-            return res.status(400).json({ message: 'Invalid reset token' });
+        if (Date.now() > storedData.expiresAt) {
+            resetOTPStore.delete(email.toLowerCase());
+            return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
         }
 
-        const user = await User.findById(decoded.id);
+        // Brute force protection: max 5 attempts
+        storedData.attempts = (storedData.attempts || 0) + 1;
+        if (storedData.attempts > 5) {
+            resetOTPStore.delete(email.toLowerCase());
+            return res.status(429).json({ message: 'Too many invalid attempts. Please request a new code.' });
+        }
+
+        if (storedData.otp !== String(otp).trim()) {
+            return res.status(400).json({ message: `Invalid verification code. ${5 - storedData.attempts} attempts remaining.` });
+        }
+
+        // OTP verified — reset password
+        const user = await User.findById(storedData.userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        user.password = newPassword; // Will be hashed by the pre-save hook
+        user.password = newPassword;
         await user.save();
+
+        resetOTPStore.delete(email.toLowerCase());
 
         res.json({ message: 'Password reset successfully. You can now login with your new password.' });
     } catch (error) {

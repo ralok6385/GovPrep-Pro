@@ -96,6 +96,10 @@ const createQuestion = async (req, res) => {
         explanationHindi,
         subjectId,
         difficulty,
+        topic,
+        year,
+        source,
+        tags,
     } = req.body;
 
     // Auto-Translate if Hindi missing
@@ -103,7 +107,6 @@ const createQuestion = async (req, res) => {
         const translated = await autoTranslateQuestion({ text, textHindi, options, explanation, explanationHindi });
         textHindi = translated.textHindi;
         explanationHindi = translated.explanationHindi;
-        // Options are updated in place in the object if passed by reference, but we reconstructed above
         options = translated.options;
     }
 
@@ -116,6 +119,10 @@ const createQuestion = async (req, res) => {
         explanationHindi,
         subjectId,
         difficulty,
+        topic: topic || 'General',
+        year: year || undefined,
+        source: source || undefined,
+        tags: tags || [],
     });
 
     res.status(201).json(question);
@@ -258,6 +265,10 @@ const updateQuestion = async (req, res) => {
             explanationHindi,
             subjectId,
             difficulty,
+            topic,
+            year,
+            source,
+            tags,
         } = req.body;
 
         const question = await Question.findById(req.params.id);
@@ -271,10 +282,10 @@ const updateQuestion = async (req, res) => {
             question.explanationHindi = explanationHindi || question.explanationHindi;
             question.subjectId = subjectId || question.subjectId;
             question.difficulty = difficulty || question.difficulty;
-
-            // Optional: Re-translate if english text changed but hindi didn't?
-            // For now, let's assume manual edit overrides auto-translation logic 
-            // OR if user wants re-translation they can use the button in UI.
+            if (topic !== undefined) question.topic = topic;
+            if (year !== undefined) question.year = year;
+            if (source !== undefined) question.source = source;
+            if (tags !== undefined) question.tags = tags;
 
             const updatedQuestion = await question.save();
             res.json(updatedQuestion);
@@ -305,6 +316,122 @@ const getQuestionsByIds = async (req, res) => {
     }
 };
 
+// @desc    Get practice questions (filtered by subject, topic, difficulty)
+// @route   GET /api/questions/practice
+// @access  Private (Student)
+const getPracticeQuestions = async (req, res) => {
+    try {
+        const { subjectId, topic, difficulty, limit = 20, page = 1 } = req.query;
+        const filter = {};
+
+        if (subjectId) filter.subjectId = subjectId;
+        if (topic && topic !== 'all') filter.topic = topic;
+        if (difficulty && difficulty !== 'all') filter.difficulty = difficulty;
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const [questions, total] = await Promise.all([
+            Question.find(filter)
+                .populate('subjectId', 'name')
+                .skip(skip)
+                .limit(parseInt(limit))
+                .lean(),
+            Question.countDocuments(filter)
+        ]);
+
+        res.json({
+            questions,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit))
+        });
+    } catch (error) {
+        console.error('Practice Questions Error:', error);
+        res.status(500).json({ message: 'Failed to fetch practice questions' });
+    }
+};
+
+// @desc    Get unique topics for a subject (for practice mode topic selector)
+// @route   GET /api/questions/topics
+// @access  Private
+const getTopicsForSubject = async (req, res) => {
+    try {
+        const { subjectId } = req.query;
+        const filter = {};
+        if (subjectId) filter.subjectId = subjectId;
+
+        const topics = await Question.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: '$topic',
+                    count: { $sum: 1 },
+                    difficulties: { $addToSet: '$difficulty' }
+                }
+            },
+            { $sort: { count: -1 } },
+            {
+                $project: {
+                    topic: '$_id',
+                    count: 1,
+                    difficulties: 1,
+                    _id: 0
+                }
+            }
+        ]);
+
+        res.json(topics);
+    } catch (error) {
+        console.error('Topics Fetch Error:', error);
+        res.status(500).json({ message: 'Failed to fetch topics' });
+    }
+};
+
+// @desc    Get Previous Year Questions (PYQ)
+// @route   GET /api/questions/pyq
+// @access  Private
+const getPYQQuestions = async (req, res) => {
+    try {
+        const { year, source, subjectId, limit = 20, page = 1 } = req.query;
+        const filter = {};
+
+        filter.$or = [
+            { year: { $exists: true, $ne: null } },
+            { source: { $exists: true, $ne: null, $ne: '' } }
+        ];
+
+        if (year) filter.year = parseInt(year);
+        if (source) filter.source = { $regex: source, $options: 'i' };
+        if (subjectId) filter.subjectId = subjectId;
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const [questions, total, years, sources] = await Promise.all([
+            Question.find(filter)
+                .populate('subjectId', 'name')
+                .sort({ year: -1 })
+                .skip(skip)
+                .limit(parseInt(limit))
+                .lean(),
+            Question.countDocuments(filter),
+            Question.distinct('year', { year: { $exists: true, $ne: null } }),
+            Question.distinct('source', { source: { $exists: true, $ne: null, $ne: '' } })
+        ]);
+
+        res.json({
+            questions,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit)),
+            availableYears: years.sort((a, b) => b - a),
+            availableSources: sources.sort()
+        });
+    } catch (error) {
+        console.error('PYQ Fetch Error:', error);
+        res.status(500).json({ message: 'Failed to fetch PYQ questions' });
+    }
+};
+
 module.exports = {
     createQuestion,
     bulkCreateQuestions,
@@ -314,5 +441,8 @@ module.exports = {
     deleteQuestion,
     updateQuestion,
     getQuestionsByIds,
-    autoTranslateQuestion
+    autoTranslateQuestion,
+    getPracticeQuestions,
+    getTopicsForSubject,
+    getPYQQuestions
 };

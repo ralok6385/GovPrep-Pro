@@ -8,9 +8,17 @@ const {
     getQuestionById,
     deleteQuestion,
     updateQuestion,
-    getQuestionsByIds
+    getQuestionsByIds,
+    getPracticeQuestions,
+    getTopicsForSubject,
+    getPYQQuestions
 } = require('../controllers/questionController');
 const { protect, admin } = require('../middleware/authMiddleware');
+
+// Student-facing practice & PYQ routes (must be ABOVE /:id to avoid route conflicts)
+router.get('/practice', protect, getPracticeQuestions);
+router.get('/topics', protect, getTopicsForSubject);
+router.get('/pyq', protect, getPYQQuestions);
 
 router.route('/').post(protect, admin, createQuestion).get(protect, admin, getQuestions);
 router.route('/bulk').post(protect, admin, bulkCreateQuestions);

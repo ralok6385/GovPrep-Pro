@@ -21,8 +21,9 @@ export default function Dashboard() {
     const router = useRouter();
     const [recentVideos, setRecentVideos] = useState<ContentItem[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [stats, setStats] = useState<any>(null); // Stats structure is complex, might need more specific type later
+    const [stats, setStats] = useState<any>(null);
     const [history, setHistory] = useState<any[]>([]);
+    const [latestUpdate, setLatestUpdate] = useState<any>(null);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
@@ -45,6 +46,14 @@ export default function Dashboard() {
             setSubjects(subjectsRes.data);
             setStats(statsRes.data);
             setHistory(historyRes.data);
+
+            // Fetch latest notification for the updates card
+            try {
+                const { data: notifData } = await api.get('/notifications');
+                if (notifData?.notifications?.length > 0) {
+                    setLatestUpdate(notifData.notifications[0]);
+                }
+            } catch (e) { /* Notifications are optional, fail silently */ }
         } catch (error) {
             console.error('Failed to load dashboard data', error);
         } finally {
@@ -155,6 +164,31 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Quick Access: Practice & Battle */}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                    <Link href="/dashboard/practice" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
+                        <div className="relative z-10">
+                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-3">
+                                <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Topic Practice</h3>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Master one topic at a time</p>
+                        </div>
+                    </Link>
+
+                    <Link href="/dashboard/battle" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-400 dark:hover:border-rose-600 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-rose-50 dark:bg-rose-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
+                        <div className="relative z-10">
+                            <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-3">
+                                <Swords className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                            </div>
+                            <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Battle Arena</h3>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">1v1 live quiz challenge</p>
+                        </div>
+                    </Link>
                 </div>
 
                 <div className="mb-8">
@@ -496,7 +530,7 @@ export default function Dashboard() {
 
             {/* RIGHT COLUMN (Updates & Lectures) */}
             <div className="lg:col-span-4 space-y-8">
-                {/* Latest Updates Card */}
+                {/* Latest Updates Card — Dynamic from Notifications API */}
                 <Link href="/dashboard/updates" className="block group">
                     <div className="relative overflow-hidden bg-gradient-to-br from-[#4F46E5] to-[#7C3AED] rounded-[2rem] p-8 shadow-2xl shadow-indigo-500/25 transition-transform duration-300 hover:scale-[1.02]">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
@@ -506,7 +540,7 @@ export default function Dashboard() {
                             <div className="flex justify-between items-start mb-6">
                                 <div className="bg-white/20 backdrop-blur-md border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5 text-xs font-bold text-white shadow-sm">
                                     <Sparkles className="w-3 h-3 text-yellow-300" />
-                                    <span>New Update</span>
+                                    <span>{latestUpdate ? 'Latest Update' : 'New Update'}</span>
                                 </div>
                                 <div className="bg-white/10 rounded-full p-2">
                                     <Train className="w-8 h-8 text-white/90" />
@@ -514,10 +548,11 @@ export default function Dashboard() {
                             </div>
 
                             <h3 className="text-3xl font-bold text-white mb-3 leading-tight">
-                                RRB NTPC <br /> <span className="text-indigo-200">Announced!</span>
+                                {latestUpdate?.title || 'RRB Updates'} <br />
+                                <span className="text-indigo-200">{latestUpdate ? '' : 'Stay Tuned!'}</span>
                             </h3>
                             <p className="text-indigo-100 text-sm mb-8 leading-relaxed opacity-90 font-medium">
-                                Check the latest official notification regarding exam schedule.
+                                {latestUpdate?.message || 'Check for the latest official notifications regarding exam schedules.'}
                             </p>
 
                             <div className="flex items-center gap-2 text-white font-bold text-sm bg-white/10 w-full justify-center py-4 rounded-xl backdrop-blur-sm border border-white/10 group-hover:bg-white group-hover:text-indigo-600 transition-all">

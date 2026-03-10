@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const compression = require('compression');
+const { rateLimit } = require('express-rate-limit');
 const connectDB = require('./config/db');
 const mongoose = require('mongoose');
 
@@ -48,12 +49,55 @@ app.use(cors({
         ) {
             return callback(null, true);
         }
-        callback(null, true); // Permissive fallback — tighten in production if needed
+        // In production, reject unknown origins. In dev, allow all.
+        if (process.env.NODE_ENV === 'production') {
+            return callback(new Error(`CORS: origin ${origin} not allowed`), false);
+        }
+        callback(null, true); // Dev-mode fallback
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
 }));
+
+// --- RATE LIMITING ---
+// General API rate limit: 100 requests per 15 minutes per IP
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { message: 'Too many requests, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Strict auth rate limit: prevents brute force on login/signup
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // 10 login attempts per 15 minutes
+    message: { message: 'Too many login attempts. Please try again after 15 minutes.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const signupLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5, // 5 signups per hour per IP
+    message: { message: 'Too many accounts created. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// AI generation limiter (expensive operation)
+const aiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { message: 'AI generation limit reached. Please wait.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Apply general limiter to all /api routes
+app.use('/api/', generalLimiter);
 
 // Handle OPTIONS preflight — Express 5 requires explicit wildcard syntax
 app.options('/{*path}', cors());
@@ -111,7 +155,13 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Routes
+// Routes — with targeted rate limiters for sensitive endpoints
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/signup', signupLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/ai', aiLimiter);
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/exams', require('./routes/examRoutes'));
 app.use('/api/subjects', require('./routes/subjectRoutes'));
@@ -121,7 +171,7 @@ app.use('/api/content', require('./routes/contentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
-app.use('/api/ranks', require('./routes/rankRoutes')); // [NEW]
+app.use('/api/ranks', require('./routes/rankRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/bookmarks', require('./routes/bookmarkRoutes'));

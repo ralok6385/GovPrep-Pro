@@ -206,7 +206,14 @@ const startTest = async (req, res) => {
 // @route   POST /api/tests/:id/submit
 // @access  Private (Student)
 const submitTest = async (req, res) => {
-    const { responses, tabSwitchWarnings, isAutoSubmitted } = req.body; // [{ questionId, selectedOption, timeTaken }]
+    const { responses, tabSwitchWarnings, isAutoSubmitted, completionTimeMinutes } = req.body; // [{ questionId, selectedOption, timeTaken }]
+
+    // Prevent duplicate submissions
+    const existingResult = await TestResult.findOne({ studentId: req.user._id, testId: req.params.id });
+    if (existingResult) {
+        return res.status(409).json({ message: 'You have already submitted this test.', resultId: existingResult._id });
+    }
+
     const test = await Test.findById(req.params.id).populate('questions');
 
     if (!test) {
@@ -262,6 +269,7 @@ const submitTest = async (req, res) => {
         responses: processedResponses,
         tabSwitchWarnings: tabSwitchWarnings || 0,
         isAutoSubmitted: isAutoSubmitted || false,
+        completionTimeMinutes: completionTimeMinutes || 0,
     });
 
     // Calculate Rank immediately for storage

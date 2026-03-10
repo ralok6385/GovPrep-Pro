@@ -40,6 +40,10 @@ const testResultSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        completionTimeMinutes: {
+            type: Number,
+            default: 0,
+        },
         rank: {
             type: Number,
         },
@@ -59,6 +63,7 @@ testResultSchema.index({ score: -1 });
 testResultSchema.index({ testId: 1, score: -1 }); // For Leaderboards
 testResultSchema.index({ studentId: 1, createdAt: -1 }); // For student history
 testResultSchema.index({ createdAt: -1 }); // For recent results
+testResultSchema.index({ studentId: 1, testId: 1 }, { unique: true }); // Prevent duplicate submissions
 
 const TestResult = mongoose.model('TestResult', testResultSchema);
 
