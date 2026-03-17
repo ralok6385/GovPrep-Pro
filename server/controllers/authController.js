@@ -138,24 +138,29 @@ const registerUser = async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getUserProfile = async (req, res) => {
-    const user = await User.findById(req.user._id).populate('selectedExam');
+    try {
+        const user = await User.findById(req.user._id).populate('selectedExam');
 
-    if (user) {
-        res.json({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            targetExam: user.targetExam,
-            language: user.language,
-            avatar: user.avatar,
-            streak: user.streak,
-            xp: user.xp,
-            level: user.level,
-            badges: user.badges,
-        });
-    } else {
-        res.status(404).json({ message: 'User not found' });
+        if (user) {
+            res.json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                targetExam: user.targetExam,
+                language: user.language,
+                avatar: user.avatar,
+                streak: user.streak,
+                xp: user.xp,
+                level: user.level,
+                badges: user.badges,
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('[GetProfile Error]:', error.message);
+        res.status(500).json({ message: 'Server error fetching profile' });
     }
 };
 
@@ -210,42 +215,47 @@ const getUsers = async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateUserProfile = async (req, res) => {
-    const user = await User.findById(req.user._id);
+    try {
+        const user = await User.findById(req.user._id);
 
-    if (user) {
-        user.name = req.body.name || user.name;
-        user.email = req.body.email || user.email;
-        if (req.body.password) {
-            user.password = req.body.password;
-        }
-        if (req.body.targetExam) {
-            user.targetExam = req.body.targetExam;
-        }
-        if (req.body.language) {
-            user.language = req.body.language;
-        }
-        if (req.body.avatar !== undefined) {
-            user.avatar = req.body.avatar;
-        }
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            if (req.body.password) {
+                user.password = req.body.password;
+            }
+            if (req.body.targetExam) {
+                user.targetExam = req.body.targetExam;
+            }
+            if (req.body.language) {
+                user.language = req.body.language;
+            }
+            if (req.body.avatar !== undefined) {
+                user.avatar = req.body.avatar;
+            }
 
-        const updatedUser = await user.save();
+            const updatedUser = await user.save();
 
-        res.json({
-            _id: updatedUser._id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            role: updatedUser.role,
-            targetExam: updatedUser.targetExam,
-            language: updatedUser.language,
-            avatar: updatedUser.avatar,
-            streak: updatedUser.streak,
-            xp: updatedUser.xp,
-            level: updatedUser.level,
-            badges: updatedUser.badges,
-            token: generateToken(updatedUser._id),
-        });
-    } else {
-        res.status(404).json({ message: 'User not found' });
+            res.json({
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                targetExam: updatedUser.targetExam,
+                language: updatedUser.language,
+                avatar: updatedUser.avatar,
+                streak: updatedUser.streak,
+                xp: updatedUser.xp,
+                level: updatedUser.level,
+                badges: updatedUser.badges,
+                token: generateToken(updatedUser._id),
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('[UpdateProfile Error]:', error.message);
+        res.status(500).json({ message: 'Server error updating profile' });
     }
 };
 

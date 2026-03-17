@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
+// Rate-limit auth middleware DB-disconnect logs
+let lastAuthDbLog = 0;
+
 const protect = async (req, res, next) => {
     let token;
 
@@ -15,8 +18,12 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             if (mongoose.connection.readyState !== 1) {
-                console.warn('[Auth] DB not connected. State:', mongoose.connection.readyState);
-                return res.status(503).json({ message: 'Service unavailable, database reconnecting...' });
+                const now = Date.now();
+                if (now - lastAuthDbLog > 15000) {
+                    console.warn('[Auth] DB not connected. State:', mongoose.connection.readyState);
+                    lastAuthDbLog = now;
+                }
+                return res.status(503).json({ message: 'Service temporarily unavailable. Please retry in a few seconds.' });
             }
 
             req.user = await User.findById(decoded.id).select('-password').lean();

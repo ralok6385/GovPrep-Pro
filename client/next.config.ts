@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     const isProd = process.env.NODE_ENV === 'production';
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (isProd ? 'https://govprep-backend.onrender.com' : 'http://localhost:5005');
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (isProd ? 'https://govprep-backend.onrender.com' : 'http://localhost:5001');
 
     return [
       {

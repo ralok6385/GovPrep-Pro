@@ -163,43 +163,46 @@ const getTestById = async (req, res) => {
 // @route   GET /api/tests/:id/start
 // @access  Private (Student)
 const startTest = async (req, res) => {
-    const test = await Test.findById(req.params.id).populate('questions');
+    try {
+        // Check if already attempted FIRST (cheapest query — avoid loading questions unnecessarily)
+        const existingResult = await TestResult.findOne(
+            { studentId: req.user._id, testId: req.params.id },
+            { _id: 1 }
+        ).lean();
+        if (existingResult) {
+            return res.status(403).json({ message: 'You have already attempted this test', attemptId: existingResult._id });
+        }
 
-    if (!test) {
-        return res.status(404).json({ message: 'Test not found' });
+        const test = await Test.findById(req.params.id).populate('questions');
+
+        if (!test) {
+            return res.status(404).json({ message: 'Test not found' });
+        }
+
+        // Security: Remove correctOption from questions
+        const sanitizedQuestions = test.questions
+            .filter(q => q && q._id) // Skip null/deleted questions
+            .map((q) => ({
+                _id: q._id,
+                text: q.text,
+                textHindi: q.textHindi,
+                options: q.options.map(opt => ({
+                    id: opt.id,
+                    text: opt.text,
+                    textHindi: opt.textHindi
+                })),
+            }));
+
+        res.json({
+            _id: test._id,
+            title: test.title,
+            durationMinutes: test.durationMinutes,
+            questions: sanitizedQuestions,
+        });
+    } catch (error) {
+        console.error('[Start Test Error]:', error.message);
+        res.status(500).json({ message: 'Server error starting test' });
     }
-
-    console.log(`[Start Test] Test: ${test.title}, Raw Questions: ${test.questions?.length || 0}`);
-
-    // Security: Remove correctOption from questions
-    const sanitizedQuestions = test.questions.map((q) => {
-        if (!q.text) console.warn(`[Start Test] Question ${q._id} has no text!`);
-        return {
-            _id: q._id,
-            text: q.text,
-            textHindi: q.textHindi,
-            options: q.options.map(opt => ({
-                id: opt.id,
-                text: opt.text,
-                textHindi: opt.textHindi
-            })),
-        };
-    });
-
-    console.log(`[Start Test] Sending ${sanitizedQuestions.length} sanitized questions.`);
-
-    // Check if already attempted
-    const existingResult = await TestResult.findOne({ studentId: req.user._id, testId: req.params.id });
-    if (existingResult) {
-        return res.status(403).json({ message: 'You have already attempted this test', attemptId: existingResult._id });
-    }
-
-    res.json({
-        _id: test._id,
-        title: test.title,
-        durationMinutes: test.durationMinutes,
-        questions: sanitizedQuestions,
-    });
 };
 
 // @desc    Submit test and calculate score
@@ -277,10 +280,10 @@ const submitTest = async (req, res) => {
         });
 
         // Calculate Rank immediately for storage
-        const allResults = await TestResult.find({ testId: test._id }).select('score').sort({ score: -1 });
-        const allScores = allResults.map(r => r.score);
-        const rank = allScores.indexOf(score) + 1;
-        const totalParticipants = allScores.length;
+        const allResults = await TestResult.find({ testId: test._id }).select('score').sort({ score: -1 }).lean();
+        const totalParticipants = allResults.length;
+        // Use findIndex to properly handle ties (find position where our score slots in)
+        const rank = allResults.findIndex(r => r._id.toString() === result._id.toString()) + 1;
 
         // Update with rank
         await TestResult.findByIdAndUpdate(result._id, { rank, totalParticipants });
@@ -291,8 +294,6 @@ const submitTest = async (req, res) => {
                 path: 'responses.questionId',
                 model: 'Question'
             });
-
-        console.log('SUBMIT TEST - Populated Question 0:', populatedResult.responses[0]?.questionId);
 
         // --- GAMIFICATION START ---
         let responseData = populatedResult.toObject();
@@ -412,7 +413,7 @@ const getTestResult = async (req, res) => {
                 }
             });
 
-        console.log('GET RESULT - Populated Question 0:', result?.responses[0]?.questionId);
+        // Debug log removed for production cleanliness
 
         if (!result) {
             return res.status(404).json({ message: 'Result not found' });

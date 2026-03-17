@@ -397,7 +397,7 @@ const getPYQQuestions = async (req, res) => {
 
         filter.$or = [
             { year: { $exists: true, $ne: null } },
-            { source: { $exists: true, $ne: null, $ne: '' } }
+            { source: { $exists: true, $nin: [null, ''] } }
         ];
 
         if (year) filter.year = parseInt(year);

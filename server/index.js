@@ -61,10 +61,11 @@ app.use(cors({
 }));
 
 // --- RATE LIMITING ---
-// General API rate limit: 100 requests per 15 minutes per IP
+// General API rate limit: 300 requests per 15 minutes per IP
+// (Dashboard alone makes 5-10 calls per page load, so 100 was too tight)
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 300,
     message: { message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -111,13 +112,17 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 // Socket connection logic
 const { findMatch, submitAnswer, handleDisconnect } = require('./controllers/battleController');
 
+let socketConnections = 0;
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+    socketConnections++;
+    // Only log every 5th connection to reduce noise
+    if (socketConnections % 5 === 1) {
+        console.log(`[Socket] Active connections: ~${io.engine.clientsCount || socketConnections}`);
+    }
 
     // Dashboard Notifications
     socket.on('join_dashboard', (userId) => {
         socket.join(`user_${userId}`);
-        console.log(`User ${userId} joined their notification room`);
     });
 
     // --- BATTLE MODE EVENTS ---
@@ -130,7 +135,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected');
         handleDisconnect(socket);
     });
 });
@@ -176,6 +180,29 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/bookmarks', require('./routes/bookmarkRoutes'));
 
+// --- GLOBAL ERROR HANDLER (must be after all routes) ---
+// Catches any errors thrown in route handlers that aren't caught by try-catch
+app.use((err, req, res, next) => {
+    console.error('[Global Error Handler]:', err.message);
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({
+        message: err.message || 'Internal Server Error',
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    });
+});
+
+// --- PROCESS ERROR HANDLERS (prevent total server crash) ---
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION]:', err.message);
+    console.error(err.stack);
+    // Don't exit — let the server keep running for other requests
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION]:', reason);
+    // Don't exit — let the server keep running
+});
+
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== 'test') {
@@ -183,8 +210,6 @@ if (process.env.NODE_ENV !== 'test') {
         console.log(`Server running on port ${PORT}`);
 
         // --- KEEP-ALIVE PING (Prevents Render free tier from sleeping) ---
-        // Render spins down free instances after 15 minutes of inactivity.
-        // This self-ping runs every 14 minutes to keep the server permanently awake.
         if (process.env.NODE_ENV === 'production') {
             const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
             setInterval(async () => {
@@ -200,7 +225,7 @@ if (process.env.NODE_ENV !== 'test') {
                 } catch (e) {
                     console.warn('[Keep-Alive] Ping error:', e.message);
                 }
-            }, 14 * 60 * 1000); // Every 14 minutes
+            }, 14 * 60 * 1000);
             console.log('[Keep-Alive] Self-ping scheduler started (every 14 minutes)');
         }
     });

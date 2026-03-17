@@ -1,4 +1,5 @@
 const Content = require('../models/Content');
+const { processVideoSummary } = require('../utils/videoSummarizer');
 
 // @desc    Get content for a subject
 // @route   GET /api/content/:subjectId
@@ -50,7 +51,15 @@ const createContent = async (req, res) => {
             subjectId,
             topicName,
             isPremium: isPremium === 'true' || isPremium === true, // Handle string/boolean logic often needed with FormData
+            processingStatus: type === 'video' && contentUrl.includes('youtu') ? 'pending' : 'none'
         });
+
+        // Trigger background processing if it's a YouTube video
+        if (type === 'video' && contentUrl.includes('youtu')) {
+            processVideoSummary(content._id, contentUrl).catch(err => {
+                console.error('Background Summary Job Failed', err);
+            });
+        }
 
         res.status(201).json(content);
     } catch (error) {
@@ -97,4 +106,35 @@ const deleteContent = async (req, res) => {
     }
 };
 
-module.exports = { getContent, createContent, deleteContent };
+// @desc    Trigger re-summarization for all videos missing summaries
+// @route   POST /api/content/resummarize
+// @access  Private/Admin
+const resummarizeAll = async (req, res) => {
+    try {
+        const videos = await Content.find({
+            type: 'video',
+            url: { $regex: 'youtu' },
+            $or: [
+                { processingStatus: { $in: ['none', 'failed', null] } },
+                { summary: { $exists: false } },
+                { summary: '' }
+            ]
+        });
+
+        console.log(`[Resummarize] Found ${videos.length} videos to process`);
+
+        // Trigger processing for each (non-blocking)
+        for (const video of videos) {
+            processVideoSummary(video._id, video.url).catch(err => {
+                console.error(`[Resummarize] Failed for ${video.title}:`, err.message);
+            });
+        }
+
+        res.json({ message: `Processing ${videos.length} videos`, count: videos.length });
+    } catch (error) {
+        console.error('[Resummarize Error]:', error);
+        res.status(500).json({ message: 'Server Error triggering re-summarization' });
+    }
+};
+
+module.exports = { getContent, createContent, deleteContent, resummarizeAll };

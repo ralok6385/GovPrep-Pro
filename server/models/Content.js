@@ -28,6 +28,14 @@ const contentSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        summary: {
+            type: String,
+        },
+        processingStatus: {
+            type: String,
+            enum: ['none', 'pending', 'processing', 'completed', 'failed'],
+            default: 'none',
+        },
     },
     {
         timestamps: true,

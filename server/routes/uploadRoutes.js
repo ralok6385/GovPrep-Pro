@@ -70,6 +70,8 @@ router.post('/excel-questions', protect, admin, upload.single('file'), async (re
         }
 
         // 4. Link to Test
+        let finalMessage = `Successfully extracted and created ${totalInserted} questions from Excel`;
+
         if (totalInserted === 0) {
             return res.status(400).json({
                 message: 'No valid questions were created. The file might be duplicate, empty, or contain only noise.'
