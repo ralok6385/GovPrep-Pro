@@ -87,11 +87,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
 
                 <nav className="flex-1 px-4 space-y-1 overflow-y-auto py-2 relative z-10 custom-scrollbar">
-                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mb-3 mt-4 opacity-70">Insights & Command</p>
+                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 warm:text-stone-400 uppercase tracking-widest mb-3 mt-4 opacity-70">Insights & Command</p>
                     <NavItem href="/admin/dashboard" icon={LayoutDashboard} label="Command Center" pathname={pathname} />
                     <NavItem href="/admin/jobs" icon={Briefcase} label="Railway Career" pathname={pathname} />
 
-                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">Content Pipeline</p>
+                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">Content Pipeline</p>
                     <NavItem href="/admin/content/add" icon={UploadCloud} label="Content Upload" pathname={pathname} />
                     <NavItem href="/admin/exams" icon={BookOpen} label="Exam Database" pathname={pathname} />
                     <NavItem href="/admin/subjects" icon={LayoutDashboard} label="Subject Map" pathname={pathname} />
@@ -99,11 +99,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <NavItem href="/admin/questions" icon={FileQuestion} label="Question Engine" pathname={pathname} />
                     <NavItem href="/admin/tests" icon={FileText} label="Manage Tests" pathname={pathname} />
 
-                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">Intelligence</p>
+                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">Intelligence</p>
                     <NavItem href="/admin/users" icon={Users} label="Student Roster" pathname={pathname} />
                     <NavItem href="/admin/results" icon={BarChart2} label="Analytics & Results" pathname={pathname} />
 
-                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-600 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">System</p>
+                    <p className="px-4 text-[10px] font-black text-slate-400 dark:text-slate-500 warm:text-stone-400 uppercase tracking-widest mb-3 mt-8 opacity-70">System</p>
                     <NavItem href="/admin/settings" icon={Settings} label="Portal Settings" pathname={pathname} />
                 </nav>
 
@@ -151,10 +151,10 @@ function NavItem({ href, icon: Icon, label, pathname }: { href: string; icon: an
                 "flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden mx-1",
                 isActive
                     ? "bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 font-bold"
-                    : "text-slate-500 dark:text-slate-400 warm:text-stone-500 hover:bg-slate-100 dark:hover:bg-slate-800 warm:hover:bg-[#f3e6d5] hover:text-slate-900 dark:hover:text-white warm:hover:text-stone-900"
+                    : "text-slate-600 dark:text-slate-300 warm:text-stone-500 hover:bg-slate-100 dark:hover:bg-slate-800 warm:hover:bg-[#f3e6d5] hover:text-slate-900 dark:hover:text-white warm:hover:text-stone-900"
             )}
         >
-            <Icon className={clsx("w-5 h-5 transition-all duration-300", isActive ? "text-white scale-110" : "text-slate-400 dark:text-slate-500 warm:text-stone-400 group-hover:text-indigo-500 group-hover:scale-110")} />
+            <Icon className={clsx("w-5 h-5 transition-all duration-300", isActive ? "text-white scale-110" : "text-slate-400 dark:text-slate-400 warm:text-stone-400 group-hover:text-indigo-500 group-hover:scale-110")} />
             <span className={clsx("relative z-10 text-sm tracking-tight", isActive ? "font-black" : "font-bold")}>{label}</span>
             {isActive && (
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-white/30 rounded-l-full"></div>

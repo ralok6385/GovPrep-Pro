@@ -319,6 +319,19 @@ const toggleUserStatus = async (req, res) => {
     }
 };
 
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (user) {
+            res.json({ message: 'User permanently deleted' });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error('[Delete User Error]:', error);
+        res.status(500).json({ message: 'Server Error deleting user' });
+    }
+};
 
 
 // In-memory OTP store (use Redis in production)
@@ -446,4 +459,4 @@ const resetPassword = async (req, res) => {
 };
 
 
-module.exports = { authUser, registerUser, getUserProfile, selectExam, getUsers, updateUserProfile, updateProfileImage, toggleUserStatus, forgotPassword, resetPassword };
+module.exports = { authUser, registerUser, getUserProfile, selectExam, getUsers, updateUserProfile, updateProfileImage, toggleUserStatus, deleteUser, forgotPassword, resetPassword };

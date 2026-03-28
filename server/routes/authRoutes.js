@@ -11,6 +11,7 @@ const {
     updateUserProfile,
     updateProfileImage,
     toggleUserStatus,
+    deleteUser,
     forgotPassword,
     resetPassword
 } = require('../controllers/authController');
@@ -58,5 +59,6 @@ router.put('/profile/avatar', protect, upload.single('image'), updateProfileImag
 router.put('/select-exam', protect, selectExam);
 router.get('/users', protect, admin, getUsers);
 router.put('/users/:id/status', protect, admin, toggleUserStatus);
+router.delete('/users/:id', protect, admin, deleteUser);
 
 module.exports = router;

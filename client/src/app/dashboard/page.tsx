@@ -108,13 +108,13 @@ export default function Dashboard() {
 
                 {/* Today's Focus Section */}
                 <div className="mb-10">
-                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Target className="w-4 h-4" />
                         Today's Focus
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* 1. Daily Quiz Card */}
-                        <Link href="/dashboard/tests?type=quiz" className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-1 rounded-[2rem] border border-slate-100 dark:border-slate-800 warm:border-stone-200 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                        <Link href="/dashboard/tests?type=quiz" className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-1 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 warm:border-stone-200 shadow-[0_2px_16px_rgba(79,70,229,0.06)] hover:shadow-xl transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Zap className="w-24 h-24 text-amber-500 -mr-4 -mt-4 rotate-12" />
                             </div>
@@ -128,7 +128,7 @@ export default function Dashboard() {
                                     </span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-slate-800 dark:text-white warm:text-stone-800 text-lg mb-1 group-hover:text-amber-600 transition-colors">Daily Speed Quiz</h3>
+                                    <h3 className="font-bold text-slate-900 dark:text-white warm:text-stone-800 text-lg mb-1 group-hover:text-amber-600 transition-colors">Daily Speed Quiz</h3>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 warm:text-stone-500 font-medium leading-relaxed">Boost your speed and accuracy with fresh questions.</p>
                                 </div>
                                 <div className="mt-4 flex items-center gap-2 text-amber-600 text-xs font-bold uppercase tracking-wider group-hover:gap-3 transition-all">
@@ -168,24 +168,24 @@ export default function Dashboard() {
 
                 {/* Quick Access: Practice & Battle */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                    <Link href="/dashboard/practice" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group relative overflow-hidden">
+                    <Link href="/dashboard/practice" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_16px_rgba(79,70,229,0.05)] hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
                         <div className="relative z-10">
                             <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-3">
                                 <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Topic Practice</h3>
+                            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Topic Practice</h3>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Master one topic at a time</p>
                         </div>
                     </Link>
 
-                    <Link href="/dashboard/battle" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-400 dark:hover:border-rose-600 transition-all group relative overflow-hidden">
+                    <Link href="/dashboard/battle" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_16px_rgba(79,70,229,0.05)] hover:shadow-xl hover:border-rose-400 dark:hover:border-rose-600 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-rose-50 dark:bg-rose-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
                         <div className="relative z-10">
                             <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-3">
                                 <Swords className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                             </div>
-                            <h3 className="font-bold text-slate-800 dark:text-white text-sm mb-1 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Battle Arena</h3>
+                            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">Battle Arena</h3>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">1v1 live quiz challenge</p>
                         </div>
                     </Link>

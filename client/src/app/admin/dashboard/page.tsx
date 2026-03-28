@@ -184,19 +184,19 @@ export default function AdminDashboard() {
                             ))}
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center py-4 px-6 border-2 border-dashed border-slate-100 rounded-[2rem]">
-                            <TrendingUp className="w-10 h-10 text-slate-200 mb-3" />
-                            <p className="text-xs text-slate-400 font-bold leading-relaxed px-4">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center py-4 px-6 border-2 border-dashed border-slate-100 dark:border-slate-700 rounded-[2rem]">
+                            <TrendingUp className="w-10 h-10 text-slate-200 dark:text-slate-700 mb-3" />
+                            <p className="text-xs text-slate-400 dark:text-slate-500 font-bold leading-relaxed px-4">
                                 Deep learning in progress. Attempt more tests to generate insights.
                             </p>
                         </div>
                     )}
 
-                    <div className="mt-8 p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
+                    <div className="mt-8 p-5 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-3xl border border-indigo-100/50 dark:border-indigo-800/50">
                         <div className="flex items-start gap-3">
-                            <Zap className="w-4 h-4 text-indigo-600 mt-1 fill-indigo-200" />
-                            <p className="text-[11px] text-slate-600 font-bold leading-relaxed">
-                                <strong className="text-indigo-700">AI Insight:</strong> Accuracy is flagging in {data.weakAreas?.[0]?.subject || 'core subjects'}. Consider adding more practice material.
+                            <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mt-1 fill-indigo-200 dark:fill-indigo-800" />
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 font-bold leading-relaxed">
+                                <strong className="text-indigo-700 dark:text-indigo-400">AI Insight:</strong> Accuracy is flagging in {data.weakAreas?.[0]?.subject || 'core subjects'}. Consider adding more practice material.
                             </p>
                         </div>
                     </div>
@@ -413,7 +413,7 @@ function WeakSubjectBar({ subject, percentage, color }: { subject: string, perce
         <div className="group">
             <div className="flex justify-between items-end mb-2">
                 <div>
-                    <span className="text-xs font-black text-slate-700 block mb-0.5">{subject}</span>
+                    <span className="text-xs font-black text-slate-700 dark:text-slate-200 block mb-0.5">{subject}</span>
                     <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Avg: {Math.round(percentage + (subject.length % 7) - 3)}%</span>
                 </div>
                 <span className={`text-xs font-black ${color.replace('bg-', 'text-')}`}>{percentage}%</span>

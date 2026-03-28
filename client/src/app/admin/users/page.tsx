@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { Users, Search, Shield, GraduationCap, Calendar, Mail, UserPlus, X, Lock, Phone as PhoneIcon, Loader2, User as UserIcon } from 'lucide-react';
+import { Users, Search, Shield, GraduationCap, Calendar, Mail, UserPlus, X, Lock, Phone as PhoneIcon, Loader2, User as UserIcon, Trash2, AlertTriangle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -22,6 +22,8 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -29,7 +31,6 @@ export default function UsersPage() {
     useEffect(() => {
         if (searchParams.get('add') === 'true') {
             setShowAddModal(true);
-            // Clear the param without full reload
             const newParams = new URLSearchParams(searchParams.toString());
             newParams.delete('add');
             router.replace(`/admin/users?${newParams.toString()}`);
@@ -48,19 +49,26 @@ export default function UsersPage() {
         }
     };
 
-    const handleToggleStatus = async (user: User) => {
-        if (!confirm(`Are you sure you want to ${user.isDeleted ? 'restore' : 'deactivate'} ${user.name}?`)) return;
-
+    const handleDeleteUser = async (permanent: boolean) => {
+        if (!deleteTarget) return;
+        setDeleting(true);
         try {
-            await api.put(`/auth/users/${user._id}/status`);
-            toast.success(`User ${user.isDeleted ? 'restored' : 'deactivated'} successfully`);
+            if (permanent) {
+                await api.delete(`/auth/users/${deleteTarget._id}`);
+                toast.success(`${deleteTarget.name} permanently deleted`);
+            } else {
+                await api.put(`/auth/users/${deleteTarget._id}/status`);
+                toast.success(`${deleteTarget.name} ${deleteTarget.isDeleted ? 'restored' : 'deactivated'} successfully`);
+            }
+            setDeleteTarget(null);
             fetchUsers();
-        } catch (error) {
-            console.error('Failed to update user status', error);
-            toast.error('Failed to update user status');
+        } catch (error: any) {
+            console.error('Failed to delete user', error);
+            toast.error(error.response?.data?.message || 'Failed to delete user');
+        } finally {
+            setDeleting(false);
         }
     };
-
 
     const filteredUsers = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,22 +83,22 @@ export default function UsersPage() {
         <div className="p-8 max-w-7xl mx-auto space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <Users className="w-6 h-6 text-indigo-600" />
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                         Student Management
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">
-                        Total Registered Users: <span className="font-bold text-slate-800">{users.length}</span>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                        Total Registered Users: <span className="font-bold text-slate-800 dark:text-white">{users.length}</span>
                     </p>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                         <input
                             type="text"
                             placeholder="Search students..."
-                            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-64"
+                            className="pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-64 text-slate-800 dark:text-white"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -104,29 +112,29 @@ export default function UsersPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200">
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Student</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Target Exam</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Role</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Joined</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                            <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Student</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Target Exam</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Role</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Joined</th>
+                                <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {filteredUsers.length > 0 ? filteredUsers.map((user) => (
-                                <tr key={user._id} className={`hover:bg-slate-50/50 transition-colors ${user.isDeleted ? 'opacity-60 bg-slate-50/30 grayscale-[0.8]' : ''}`}>
+                                <tr key={user._id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors ${user.isDeleted ? 'opacity-60 bg-slate-50/30 dark:bg-slate-900/30 grayscale-[0.8]' : ''}`}>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center font-bold text-sm">
+                                            <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold text-sm">
                                                 {user.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="font-bold text-slate-800 text-sm">{user.name}</p>
-                                                <p className="text-xs text-slate-500 flex items-center gap-1">
+                                                <p className="font-bold text-slate-800 dark:text-white text-sm">{user.name}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                                     <Mail className="w-3 h-3" /> {user.email}
                                                 </p>
                                             </div>
@@ -151,15 +159,15 @@ export default function UsersPage() {
                                             {user.role}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
+                                    <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                                         <div className="flex items-center gap-2">
-                                            <Calendar className="w-4 h-4 text-slate-400" />
+                                            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                                             {new Date(user.createdAt).toLocaleDateString()}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <button
-                                            onClick={() => handleToggleStatus(user)}
+                                            onClick={() => setDeleteTarget(user)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${user.isDeleted
                                                 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
                                                 : 'bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200'
@@ -180,6 +188,83 @@ export default function UsersPage() {
                     </table>
                 </div>
             </div>
+            {/* Delete Confirmation Modal */}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in zoom-in-95">
+                        <div className="flex items-center gap-4 mb-6 text-rose-600 dark:text-rose-500">
+                            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shrink-0">
+                                <AlertTriangle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                    {deleteTarget.isDeleted ? 'Restore Student?' : 'Delete Student?'}
+                                </h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                                    {deleteTarget.name} ({deleteTarget.email})
+                                </p>
+                            </div>
+                        </div>
+
+                        {!deleteTarget.isDeleted ? (
+                            <div className="space-y-3 mb-8">
+                                <p className="text-sm text-slate-600 dark:text-slate-300">Choose how to remove this student:</p>
+                                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-sm">
+                                    <strong className="text-amber-800 dark:text-amber-500 block mb-1">Soft Delete (Deactivate)</strong>
+                                    <span className="text-amber-700/80 dark:text-amber-500/80 text-xs">Student cannot log in, but all test history and data is preserved. Can be restored later.</span>
+                                </div>
+                                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-sm">
+                                    <strong className="text-rose-800 dark:text-rose-500 block mb-1">Permanent Delete</strong>
+                                    <span className="text-rose-700/80 dark:text-rose-500/80 text-xs">Permanently erase this student and all associated data. CANNOT BE UNDONE.</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                                This will restore the student's access to the platform. They will be able to log in and take tests again.
+                            </p>
+                        )}
+
+                        <div className="flex flex-col gap-3">
+                            {!deleteTarget.isDeleted ? (
+                                <>
+                                    <button
+                                        onClick={() => handleDeleteUser(true)}
+                                        disabled={deleting}
+                                        className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 disabled:opacity-70"
+                                    >
+                                        {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                        Permanently Delete
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteUser(false)}
+                                        disabled={deleting}
+                                        className="w-full py-3 text-slate-700 dark:text-slate-300 font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-all"
+                                    >
+                                        Soft Delete (Deactivate)
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => handleDeleteUser(false)}
+                                    disabled={deleting}
+                                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-70"
+                                >
+                                    Restore Access
+                                </button>
+                            )}
+                            
+                            <button
+                                onClick={() => setDeleteTarget(null)}
+                                disabled={deleting}
+                                className="w-full py-3 text-slate-500 text-xs font-bold hover:text-slate-700 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <AddStudentModal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
@@ -229,12 +314,12 @@ function AddStudentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, onCl
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md border border-slate-100 animate-in zoom-in-95">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-slate-100 dark:border-slate-800 animate-in zoom-in-95">
                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <UserPlus className="w-5 h-5 text-indigo-600" /> Add Student
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <UserPlus className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Add Student
                     </h3>
-                    <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                    <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 dark:text-slate-500">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -304,14 +389,14 @@ function AddStudentModal({ isOpen, onClose, onSuccess }: { isOpen: boolean, onCl
                                 <button
                                     type="button"
                                     onClick={() => setFormData({ ...formData, language: 'hi' })}
-                                    className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${formData.language === 'hi' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${formData.language === 'hi' ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}
                                 >
                                     हिन्दी
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setFormData({ ...formData, language: 'en' })}
-                                    className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${formData.language === 'en' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`}
+                                    className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${formData.language === 'en' ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-400' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}
                                 >
                                     ENG
                                 </button>

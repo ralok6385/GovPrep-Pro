@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from 'react-hot-toast';
 
 import { NotificationProvider } from "@/context/NotificationContext";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -53,22 +55,24 @@ export default function RootLayout({
               navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) {
                   registration.unregister();
-                  console.log('Forcefully unregistered service worker:', registration);
                 }
-              }).catch(function(err) {
-                console.log('Service Worker unregistration failed: ', err);
-              });
-              
-              // Also clear out caches to be absolutely safe
-              caches.keys().then((keyList) => {
-                return Promise.all(keyList.map((key) => caches.delete(key)));
               });
             }
+            try {
+              const theme = localStorage.getItem('theme');
+              if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+              } else if (theme === 'light') {
+                document.documentElement.classList.add('light');
+              } else if (theme === 'warm') {
+                document.documentElement.classList.add('warm');
+              }
+            } catch (e) {}
           `
         }} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${plusJakarta.variable} ${manrope.variable} antialiased`}
       >
         <AuthProvider>
           <NotificationProvider>

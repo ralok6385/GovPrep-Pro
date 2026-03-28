@@ -68,73 +68,77 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[100dvh] flex bg-slate-50">
-            {/* Left Side - Branding (Enhanced) */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 text-white p-16 flex-col justify-between relative overflow-hidden">
-                {/* Abstract Background Shapes */}
-                <div className="absolute top-0 left-0 w-full h-full">
-                    <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-[100px] opacity-20 animate-pulse"></div>
-                    <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-500 rounded-full mix-blend-overlay filter blur-[120px] opacity-20"></div>
-                </div>
+        <div className="min-h-[100dvh] flex flex-col lg:flex-row bg-[#ffffff] dark:bg-[#000000] transition-colors duration-500 font-sans">
+            {/* Left Side - Deep SaaS Branding */}
+            <div className="hidden lg:flex lg:w-[45%] bg-[#030303] border-r border-[#ffffff]/5 text-[#ffffff] p-16 flex-col justify-between relative overflow-hidden">
+                {/* Premium Animated Gradient Background */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#4f46e5]/10 via-[#a855f7]/5 to-transparent pointer-events-none" />
+                <div className="absolute top-0 right-0 w-full h-[600px] bg-[#4f46e5]/20 blur-[180px] -translate-y-1/2 translate-x-1/3 rounded-full pointer-events-none" />
 
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-10">
-                        <Image src="/logo.png" alt="Lalan RailPath" width={60} height={60} className="w-16 h-16 object-contain bg-white/10 rounded-xl p-1" />
-                        <span className="text-2xl font-bold tracking-tight text-white">Lalan RailPath</span>
+                <div className="relative z-10 flex flex-col gap-8">
+                    <div className="flex items-center gap-4 mb-12">
+                        <div className="w-14 h-14 bg-[#ffffff]/10 border border-[#ffffff]/20 rounded-[1.25rem] flex items-center justify-center p-2.5 backdrop-blur-xl shadow-2xl">
+                            <Image src="/logo.png" alt="Lalan RailPath" width={38} height={38} className="object-contain" />
+                        </div>
+                        <span className="text-2xl font-black tracking-tight text-[#ffffff]/90">Lalan RailPath</span>
                     </div>
 
-                    <h1 className="text-5xl font-extrabold mb-6 leading-tight tracking-tight">
-                        Welcome to <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">Lalan RailPath</span>
+                    <h1 className="text-[4rem] font-black leading-[1.02] tracking-[-0.04em]">
+                        Your journey to <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#34d399] to-[#22d3ee]">excellence</span> begins here.
                     </h1>
-                    <p className="text-indigo-100 text-lg max-w-md mb-8 leading-relaxed opacity-90">
-                        Join thousands of aspirants acing NTPC, Group D, and ALP with our AI-powered mock tests and analytics.
+                    <p className="text-[#ffffff]/60 text-xl max-w-md leading-relaxed mt-4 font-medium">
+                        Join thousands of top-tier aspirants using our AI-driven analytics to secure their future.
                     </p>
 
-                    <div className="flex gap-4">
-                        <div className="flex -space-x-3">
-                            <div className="w-10 h-10 rounded-full border-2 border-indigo-900 bg-yellow-400 flex items-center justify-center text-indigo-900 font-bold text-xs">A</div>
-                            <div className="w-10 h-10 rounded-full border-2 border-indigo-900 bg-pink-400 flex items-center justify-center text-indigo-900 font-bold text-xs">P</div>
-                            <div className="w-10 h-10 rounded-full border-2 border-indigo-900 bg-emerald-400 flex items-center justify-center text-indigo-900 font-bold text-xs">R</div>
-                            <div className="w-10 h-10 rounded-full border-2 border-indigo-900 bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">+2k</div>
+                    <div className="flex gap-5 items-center mt-12">
+                        <div className="flex -space-x-4">
+                            <div className="w-12 h-12 rounded-full border-[3px] border-[#030303] bg-[#10b981] flex items-center justify-center text-[#000000] font-bold text-sm z-30 shadow-xl">KS</div>
+                            <div className="w-12 h-12 rounded-full border-[3px] border-[#030303] bg-[#6366f1] flex items-center justify-center text-[#ffffff] font-bold text-sm z-20 shadow-xl">AJ</div>
+                            <div className="w-12 h-12 rounded-full border-[3px] border-[#030303] bg-[#f43f5e] flex items-center justify-center text-[#ffffff] font-bold text-sm z-10 shadow-xl">RV</div>
+                            <div className="w-12 h-12 rounded-full border-[3px] border-[#030303] bg-[#ffffff]/10 flex items-center justify-center text-[11px] font-bold text-[#ffffff] z-0 backdrop-blur-md">+2k</div>
                         </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="text-sm font-bold text-white">Active Aspirants</span>
-                            <span className="text-xs text-indigo-300">Preparing right now</span>
+                        <div className="flex flex-col">
+                            <span className="text-[15px] font-bolder text-[#ffffff]/90 tracking-wide">Active Aspirants</span>
+                            <span className="text-[13px] text-[#ffffff]/40 font-semibold tracking-wide">Preparing right now</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="relative z-10">
-                    <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 shadow-2xl">
-                        <p className="italic text-indigo-100 mb-4 font-light text-lg">"The secret of getting ahead is getting started."</p>
-                        <p className="font-bold text-emerald-300 tracking-wide">— Mark Twain</p>
+                <div className="relative z-10 w-full max-w-lg mt-auto">
+                    <div className="bg-[#ffffff]/[0.02] border border-[#ffffff]/10 rounded-3xl p-8 backdrop-blur-2xl">
+                        <p className="italic text-[#ffffff]/70 font-light text-[17px] leading-relaxed mb-5 flex items-start gap-3">
+                            <span className="text-[#34d399] text-3xl leading-none font-serif">"</span>
+                            The secret of getting ahead is getting started. Break your complex overwhelming tasks into small manageable ones.
+                        </p>
+                        <p className="text-[13px] font-black text-[#34d399] uppercase tracking-[0.2em]">— Mark Twain</p>
                     </div>
                 </div>
             </div>
 
-            {/* Right Side - Login Form (Modernized) */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-white xl:bg-slate-50/50">
-                <div className="w-full max-w-md bg-white p-0 xl:p-10 xl:rounded-3xl xl:shadow-sm xl:border border-slate-100">
-                    <div className="text-center lg:text-left mb-10">
-                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Welcome Back</h2>
-                        <p className="mt-3 text-slate-500 text-base">Please enter your details to sign in.</p>
+            {/* Right Side - Monumental Login Container */}
+            <div className="w-full lg:w-[55%] flex items-center justify-center p-8 sm:p-16 lg:p-24 relative overflow-hidden bg-[#ffffff] dark:bg-[#000000] transition-colors duration-500">
+                
+                <div className="w-full max-w-[500px] relative z-20">
+                    <div className="mb-12 text-left">
+                        <h2 className="text-[40px] font-black text-[#0f172a] dark:text-[#ffffff] tracking-[-0.03em] mb-3 leading-tight">Welcome back</h2>
+                        <p className="text-[#64748b] dark:text-[#94a3b8] text-[17px] font-medium tracking-tight">Enter your credentials to access your dashboard.</p>
                     </div>
 
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Email Address</label>
+                                <label className="block text-[13px] font-black text-[#334155] dark:text-[#cbd5e1] uppercase tracking-[0.1em] mb-2.5 ml-1">Email Address</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Mail className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                        <Mail className="h-[20px] w-[20px] text-[#94a3b8] group-focus-within:text-[#6366f1] dark:group-focus-within:text-[#ffffff] transition-colors" />
                                     </div>
                                     <input
                                         type="email"
                                         required
                                         name="email"
                                         autoComplete="email"
-                                        className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all font-medium"
+                                        className="block w-full pl-12 pr-5 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
                                         placeholder="name@example.com"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -143,17 +147,17 @@ export default function LoginPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Password</label>
+                                <label className="block text-[13px] font-black text-[#334155] dark:text-[#cbd5e1] uppercase tracking-[0.1em] mb-2.5 ml-1">Password</label>
                                 <div className="relative group">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                                        <Lock className="h-[20px] w-[20px] text-[#94a3b8] group-focus-within:text-[#6366f1] dark:group-focus-within:text-[#ffffff] transition-colors" />
                                     </div>
                                     <input
                                         type="password"
                                         required
                                         name="password"
                                         autoComplete="current-password"
-                                        className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 focus:bg-white transition-all font-medium"
+                                        className="block w-full pl-12 pr-5 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] tracking-[0.2em] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
@@ -163,44 +167,47 @@ export default function LoginPage() {
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
-                            <div className="flex items-center">
+                            <div className="flex items-center group">
                                 <input
                                     id="remember-me"
                                     name="remember-me"
                                     type="checkbox"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                                    className="h-5 w-5 border-[#cbd5e1] dark:border-[#ffffff]/20 rounded cursor-pointer transition-colors"
+                                    style={{ accentColor: '#000000' }}
                                 />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 cursor-pointer select-none">Remember me</label>
+                                <label htmlFor="remember-me" className="ml-3 block text-[14px] font-bold text-[#475569] dark:text-[#94a3b8] cursor-pointer select-none">
+                                    Remember me
+                                </label>
                             </div>
 
-                            <div className="text-sm">
-                                <a href="/forgot-password" className="font-bold text-indigo-600 hover:text-indigo-500 hover:underline">Forgot password?</a>
-                            </div>
+                            <a href="/forgot-password" className="text-[14px] font-bold text-[#0f172a] dark:text-[#ffffff] hover:text-[#6366f1] dark:hover:text-[#818cf8] transition-colors">
+                                Forgot password?
+                            </a>
                         </div>
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-lg shadow-indigo-500/30 text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:translate-y-[-2px] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            className="w-full flex justify-center items-center py-4 px-5 text-[16px] mt-8 font-black text-[#ffffff] dark:text-[#000000] bg-[#0f172a] dark:bg-[#ffffff] rounded-2xl hover:bg-[#000000] dark:hover:bg-[#f1f5f9] focus:outline-none focus:ring-4 focus:ring-[#0f172a]/10 dark:focus:ring-[#ffffff]/10 transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgba(255,255,255,0.1)]"
                         >
                             {loading ? (
                                 <span className="flex items-center gap-2">
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    Signing In...
+                                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                    Authenticating...
                                 </span>
                             ) : (
-                                <span className="flex items-center gap-2">Sign In <ArrowRight className="w-5 h-5" /></span>
+                                <span className="flex items-center gap-2 tracking-wide">Sign In <ArrowRight className="w-5 h-5 ml-1" /></span>
                             )}
                         </button>
                     </form>
 
-                    <div className="mt-8 text-center">
-                        <p className="text-slate-500 text-sm">
+                    <div className="mt-12 pt-8 border-t border-[#f1f5f9] dark:border-[#ffffff]/10 text-center">
+                        <p className="text-[#64748b] dark:text-[#94a3b8] text-[15px] font-semibold">
                             Don't have an account?{' '}
-                            <Link href="/signup" className="font-bold text-indigo-600 hover:text-indigo-500 hover:underline">
-                                Create a free account
+                            <Link href="/signup" className="font-bold text-[#0f172a] dark:text-[#ffffff] hover:text-[#6366f1] dark:hover:text-[#818cf8] transition-colors ml-1">
+                                Sign up for free
                             </Link>
                         </p>
                     </div>
@@ -209,3 +216,4 @@ export default function LoginPage() {
         </div>
     );
 }
+

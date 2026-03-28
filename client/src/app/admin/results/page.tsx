@@ -139,7 +139,7 @@ export default function ResultsPage() {
         <div className="p-8 max-w-7xl mx-auto space-y-8 pb-32">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 tracking-tight">
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3 tracking-tight">
                         <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
                             <BarChart2 className="w-6 h-6 text-white" />
                         </div>
@@ -185,9 +185,9 @@ export default function ResultsPage() {
             </div>
 
             {/* Filtering & Table Section */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
-                    <h2 className="font-black text-slate-800 uppercase tracking-widest text-xs">Recent Test Submissions</h2>
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+                    <h2 className="font-black text-slate-800 dark:text-white uppercase tracking-widest text-xs">Recent Test Submissions</h2>
 
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Search Input */}
@@ -198,7 +198,7 @@ export default function ResultsPage() {
                                 placeholder="Search student..."
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none w-48 transition-all"
+                                className="pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none w-48 transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
                             />
                         </div>
 
@@ -206,7 +206,7 @@ export default function ResultsPage() {
                         <select
                             value={testFilter}
                             onChange={(e) => { setTestFilter(e.target.value); setPage(1); }}
-                            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer max-w-[200px]"
+                            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all cursor-pointer max-w-[200px]"
                         >
                             <option value="all">All Exams</option>
                             {availableTests.map((t: any) => (
@@ -227,7 +227,7 @@ export default function ResultsPage() {
                                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                             {loading && (
                                 <tr>
                                     <td colSpan={5} className="px-8 py-10 text-center">
@@ -236,14 +236,14 @@ export default function ResultsPage() {
                                 </tr>
                             )}
                             {!loading && filteredResults.map((result: any) => (
-                                <tr key={result._id} className="hover:bg-slate-50/80 transition-colors group">
+                                <tr key={result._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-black text-xs">
+                                            <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 font-black text-xs">
                                                 {result.studentId?.name?.[0] || '?'}
                                             </div>
                                             <div>
-                                                <p className="font-black text-slate-800 text-sm leading-none mb-1">{result.studentId?.name || 'Unknown'}</p>
+                                                <p className="font-black text-slate-800 dark:text-white text-sm leading-none mb-1">{result.studentId?.name || 'Unknown'}</p>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{result.studentId?.email}</p>
                                             </div>
                                         </div>
@@ -354,13 +354,13 @@ export default function ResultsPage() {
 
             {/* Review Modal (Showing Incorrect Questions) */}
             {reviewId && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white h-full w-full max-w-2xl shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-200">
+                <div className="fixed inset-0 z-[60] flex items-center justify-end bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 h-full w-full max-w-2xl shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 border-l border-slate-200 dark:border-slate-800">
                         {/* Header */}
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
                             <div>
-                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Performance Breakdown</h3>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Analyzing mistakes for {reviewData?.studentId?.name}</p>
+                                <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Performance Breakdown</h3>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Analyzing mistakes for <span className="text-slate-500 dark:text-slate-300">{reviewData?.studentId?.name}</span></p>
                             </div>
                             <button
                                 onClick={() => { setReviewId(null); setReviewData(null); }}

@@ -93,11 +93,13 @@ export default function AnalyticsPage() {
                     <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.3} />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} dy={10} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94A3B8', fontSize: 12 }} dx={-10} domain={[0, 100]} />
                                 <Tooltip
-                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.3)', backgroundColor: '#1e293b', color: '#f1f5f9' }}
+                                    itemStyle={{ fontWeight: 700, color: '#818cf8' }}
+                                    labelStyle={{ color: '#94a3b8', fontWeight: 600 }}
                                     cursor={{ stroke: '#6366F1', strokeWidth: 2 }}
                                 />
                                 <Line
@@ -125,8 +127,8 @@ export default function AnalyticsPage() {
 
                                 <div className="flex items-center justify-between mb-4">
                                     <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{subj.subject}</span>
-                                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider ${subj.status === 'Strong' ? 'bg-emerald-50 text-emerald-600' :
-                                        subj.status === 'Average' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
+                                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider ${subj.status === 'Strong' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
+                                        subj.status === 'Average' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
                                         }`}>
                                         {subj.status}
                                     </span>

@@ -13,18 +13,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const pathname = usePathname();
 
     const SidebarItem = ({ icon: Icon, label, href, active = false }: any) => {
-        // Simple active check
         const isActive = active || (pathname === href) || (pathname.startsWith(href) && href !== '/dashboard');
 
         return (
-            <Link href={href} className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-[1.02] font-bold' : 'text-slate-500 hover:bg-white hover:text-indigo-600 hover:shadow-md font-medium dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 warm:text-stone-600 warm:hover:bg-[#fdf0d5] warm:hover:text-indigo-600'}`}>
-                <div className={`p-2 rounded-xl transition-colors ${isActive ? 'bg-white/20' : 'bg-slate-50 group-hover:bg-indigo-50 dark:bg-slate-800 warm:bg-[#fdf0d5] warm:group-hover:bg-indigo-100'}`}>
+            <Link href={href} className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative overflow-hidden ${isActive ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-600/25 scale-[1.02] font-bold' : 'text-slate-700 hover:bg-indigo-50/80 hover:text-indigo-700 hover:shadow-md font-semibold dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-indigo-300 warm:text-stone-700 warm:hover:bg-[#fdf0d5] warm:hover:text-indigo-600'}`}>
+                {isActive && <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent" />}
+                <div className={`p-2 rounded-xl transition-all duration-300 relative z-10 ${isActive ? 'bg-white/20 shadow-inner' : 'bg-indigo-100/80 text-indigo-600 group-hover:bg-indigo-200/80 group-hover:text-indigo-700 dark:bg-slate-700/50 dark:text-slate-300 dark:group-hover:text-indigo-300 warm:bg-[#fdf0d5] warm:group-hover:bg-indigo-100'}`}>
                     <Icon className="w-5 h-5" />
                 </div>
-                <div className="flex-1">
-                    <span className="block leading-none">{label}</span>
+                <div className="flex-1 relative z-10">
+                    <span className="block leading-none text-[13.5px] font-semibold">{label}</span>
                     {isActive && (
-                        <span className="text-[9px] font-medium opacity-80 block mt-1 capitalize tracking-wide text-indigo-100">
+                        <span className="text-[9px] font-semibold opacity-80 block mt-1 capitalize tracking-wide text-indigo-100">
                             {label === 'Dashboard' ? 'Your Daily Hub' :
                                 label === 'Study Material' ? 'Notes & PDFs' :
                                     label === 'Full Mock Exams' ? 'Test Series' :
@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </span>
                     )}
                 </div>
-                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_white]"></div>}
+                {isActive && <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)] pulse-glow relative z-10" />}
             </Link>
         );
     }
@@ -72,9 +72,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // NotificationBell is now imported from @/components/Dashboard/NotificationBell
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 warm:bg-[var(--background)] transition-colors duration-300">
+        <div className="min-h-screen bg-[var(--background)] dark:bg-[var(--background)] warm:bg-[var(--background)] transition-colors duration-500 orb-bg">
             {/* Desktop Navigation (Left Sidebar) - Visible on lg screens */}
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-slate-900 warm:bg-[#fffbf0] border-r border-slate-200 dark:border-slate-800 warm:border-stone-200 flex-col z-50 transition-colors duration-300">
+            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[272px] glass-sidebar flex-col z-50 transition-all duration-500">
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 pb-2">
                     <div className="flex items-center gap-2 mb-8 group cursor-pointer">
                         <img src="/images/lalan_logo.png" alt="Lalan RailPath" className="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
@@ -88,8 +88,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <SidebarItem icon={Target} label="Topic Practice" href="/dashboard/practice" />
                         <SidebarItem icon={Play} label="Lectures" href="/dashboard/lectures" />
 
-                        <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
-                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] mb-2 ml-3">Progress</p>
+                        <div className="pt-4 mt-4">
+                            <p className="text-[10px] font-extrabold text-slate-400 dark:text-indigo-400/50 uppercase tracking-[0.25em] mb-2 ml-3">Progress</p>
                         </div>
                         <SidebarItem icon={TrendingUp} label="My Analytics" href="/dashboard/analytics" />
                         <SidebarItem icon={Medal} label="Leaderboard" href="/dashboard/leaderboard" />
@@ -98,9 +98,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </nav>
                 </div>
 
-                <div className="mt-auto p-6 border-t border-slate-100 dark:border-slate-800">
-                    <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-slate-800 overflow-hidden relative border border-indigo-200 dark:border-slate-700">
+                <div className="mt-auto p-6">
+                    <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-indigo-50/50 dark:hover:bg-white/5 transition-all duration-300 ghost-border hover:shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 overflow-hidden relative border-2 border-indigo-200/50 dark:border-indigo-700/30 shadow-sm">
                             {user.avatar ? (
                                 <img
                                     src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${user.avatar}`}
@@ -114,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             )}
                         </div>
                         <div className="flex-1 min-w-0 pr-2">
-                            <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate max-w-[120px]">{user.name}</h4>
+                            <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate max-w-[120px]">{user.name}</h4>
                             <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{user.email}</p>
                         </div>
                     </Link>
@@ -122,7 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </aside>
 
             {/* Mobile Header - Hidden on lg screens */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 warm:bg-[#fffbf0]/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 warm:border-stone-200/50 supports-[backdrop-filter]:bg-white/60">
+            <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-[#0c0a1a]/80 warm:bg-[#fffbf0]/80 backdrop-blur-xl border-b border-indigo-100/30 dark:border-indigo-900/20 warm:border-stone-200/50 supports-[backdrop-filter]:bg-white/50">
                 <div className="max-w-md mx-auto px-5 h-16 flex justify-between items-center">
                     <Link href="/dashboard/profile" className="flex items-center gap-3 group">
                         <div className="relative">
@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Main Content Wrapper */}
-            <div className="lg:pl-64 min-h-screen transition-all pb-24 pb-safe lg:pb-0">
+            <div className="lg:pl-[272px] min-h-screen transition-all pb-24 pb-safe lg:pb-0 relative z-10">
                 {children}
             </div>
 

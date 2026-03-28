@@ -99,14 +99,14 @@ export default function ProfilePage() {
     return (
         <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 lg:space-y-8">
             <div className="hidden lg:flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-black text-slate-800 dark:text-white warm:text-[var(--foreground)] tracking-tight">My Profile</h1>
+                <h1 className="text-3xl font-black text-slate-900 dark:text-white warm:text-[var(--foreground)] tracking-tight">My Profile</h1>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
                 {/* Left Column: Avatar & Quick Info */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 warm:border-stone-200 text-center transition-colors">
-                        <label htmlFor="avatar-upload" className="w-32 h-32 mx-auto mb-6 rounded-full border-4 border-indigo-50 dark:border-indigo-900/30 warm:border-indigo-100 overflow-hidden bg-indigo-100 dark:bg-indigo-900 warm:bg-indigo-50 flex items-center justify-center relative group cursor-pointer hover:border-indigo-300 transition-all shadow-xl shadow-indigo-100 dark:shadow-none hover:scale-105">
+                    <div className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-8 rounded-[2rem] shadow-[0_4px_24px_rgba(79,70,229,0.07)] border border-indigo-100/40 dark:border-slate-800 warm:border-stone-200 text-center transition-colors">
+                        <label htmlFor="avatar-upload" className="w-32 h-32 mx-auto mb-6 rounded-full border-4 border-indigo-200/60 dark:border-indigo-900/30 warm:border-indigo-100 overflow-hidden bg-gradient-to-br from-indigo-100 to-purple-100 dark:bg-indigo-900 warm:bg-indigo-50 flex items-center justify-center relative group cursor-pointer hover:border-indigo-400 transition-all shadow-xl shadow-indigo-200/40 dark:shadow-none hover:scale-105">
                             {avatar || user.avatar ? (
                                 <img src={avatar || user.avatar} alt={name} className="w-full h-full object-cover" />
                             ) : (
@@ -131,7 +131,7 @@ export default function ProfilePage() {
                                 }
                             }}
                         />
-                        <h2 className="font-black text-2xl text-slate-800 dark:text-white warm:text-[var(--foreground)] tracking-tight">{name}</h2>
+                        <h2 className="font-black text-2xl text-slate-900 dark:text-white warm:text-[var(--foreground)] tracking-tight">{name}</h2>
                         <p className="text-slate-500 font-medium mt-1 warm:text-stone-500">{email}</p>
 
                         <div className="mt-8 flex flex-col items-center justify-center gap-3">
@@ -151,23 +151,23 @@ export default function ProfilePage() {
 
                 {/* Right Column: Edit Form */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-6 md:p-10 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 warm:border-stone-200">
+                    <div className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-6 md:p-10 rounded-[2rem] shadow-[0_4px_24px_rgba(79,70,229,0.07)] border border-indigo-100/40 dark:border-slate-800 warm:border-stone-200">
                         <div className="flex items-center gap-3 mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
                             <User className="w-6 h-6 text-indigo-500" />
-                            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Account Settings</h2>
+                            <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Account Settings</h2>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                                    <label className="block text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <User className="h-5 w-5 text-slate-400" />
                                         </div>
                                         <input
                                             type="text"
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 warm:bg-[#fffbf0] border border-slate-200 dark:border-slate-800 warm:border-stone-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white warm:text-[var(--foreground)] transition-all"
+                                            className="w-full pl-12 pr-4 py-4 bg-slate-50/80 dark:bg-slate-950 warm:bg-[#fffbf0] border border-slate-200/80 dark:border-slate-800 warm:border-stone-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-400 outline-none font-bold text-slate-900 dark:text-white warm:text-[var(--foreground)] transition-all"
                                             placeholder="Enter your name"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
@@ -176,14 +176,14 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+                                    <label className="block text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                             <Mail className="h-5 w-5 text-slate-400" />
                                         </div>
                                         <input
                                             type="email"
-                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950 warm:bg-[#fffbf0] border border-slate-200 dark:border-slate-800 warm:border-stone-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-bold text-slate-800 dark:text-white warm:text-[var(--foreground)] transition-all"
+                                            className="w-full pl-12 pr-4 py-4 bg-slate-50/80 dark:bg-slate-950 warm:bg-[#fffbf0] border border-slate-200/80 dark:border-slate-800 warm:border-stone-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-400 outline-none font-bold text-slate-900 dark:text-white warm:text-[var(--foreground)] transition-all"
                                             placeholder="Enter your email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
@@ -194,7 +194,7 @@ export default function ProfilePage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                                    <label className="block text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">
                                         New Password <span className="font-medium text-[10px] opacity-70">(Optional)</span>
                                     </label>
                                     <input
@@ -207,7 +207,7 @@ export default function ProfilePage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Example Target Exam</label>
+                                    <label className="block text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Example Target Exam</label>
                                     <div className="grid grid-cols-2 gap-3">
                                         {exams.length > 0 ? exams.map((exam) => (
                                             <button
@@ -225,27 +225,8 @@ export default function ProfilePage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Quick Avatar Upload</label>
-                                <label
-                                    onDragOver={handleDragOver}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={handleDrop}
-                                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-3xl cursor-pointer transition-all group relative overflow-hidden
-                                        ${dragging
-                                            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-inner'
-                                            : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-400'}`}
-                                >
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
-                                        <UploadCloud className={`w-8 h-8 mb-3 transition-colors ${dragging ? 'text-indigo-500' : 'text-slate-400 group-hover:text-indigo-500'}`} />
-                                        <p className="mb-1 text-sm font-bold text-slate-600 dark:text-slate-300">
-                                            <span className="text-indigo-600 dark:text-indigo-400">Click to upload</span> or drag and drop
-                                        </p>
-                                        <p className="text-xs font-medium text-slate-400 tracking-widest uppercase mt-1">SVG, PNG, JPG (MAX. 2MB)</p>
-                                    </div>
-                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadProfileImage(e.target.files[0])} />
-                                </label>
-                            </div>
+
+
 
                             <div className="flex flex-col sm:flex-row gap-4 pt-8 mt-8 border-t border-slate-100 dark:border-slate-800">
                                 <button
