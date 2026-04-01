@@ -61,14 +61,16 @@ app.use(cors({
 }));
 
 // --- RATE LIMITING ---
-// General API rate limit: 300 requests per 15 minutes per IP
-// (Dashboard alone makes 5-10 calls per page load, so 100 was too tight)
+// General API rate limit: 1000 requests per 15 minutes per IP
+// Vercel + dashboard polling means we need a high cap. skipSuccessfulRequests
+// means only failed/errored requests count toward the limit.
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 300,
+    max: 1000,
     message: { message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
+    skipSuccessfulRequests: false, // count all so we track total load
 });
 
 // Strict auth rate limit: prevents brute force on login/signup
@@ -93,6 +95,15 @@ const aiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
     message: { message: 'AI generation limit reached. Please wait.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Profile update limiter — lenient, user-initiated only
+const profileLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+    message: { message: 'Too many profile update attempts. Please slow down.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -164,6 +175,8 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/signup', signupLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
+// Profile update gets its own lenient limiter so it never hits the general cap
+app.use('/api/auth/profile', profileLimiter);
 app.use('/api/ai', aiLimiter);
 
 app.use('/api/auth', require('./routes/authRoutes'));

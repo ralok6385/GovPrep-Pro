@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 import AIModal from '@/components/Admin/AIQuestionModal';
 import { Save, Search, Filter, Shuffle, CheckSquare, AlertCircle, Award, Sparkles, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import ManualQuestionSelector from '@/components/Admin/ManualQuestionSelector';
 
 export default function CreateTestPage() {
+    const router = useRouter();
     const [exams, setExams] = useState<any[]>([]);
     const [subjects, setSubjects] = useState<any[]>([]);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -160,19 +162,6 @@ export default function CreateTestPage() {
 
         setLoading(true);
         try {
-            // Check for AI generated questions (virtual IDs)
-            // If we have questions with UUIDs that are NOT in DB... process fails.
-            // We need a bulk create step.
-
-            // Filter out questions that are "new" (from AI)
-            const aiQuestions = questions.filter(q => selectedQuestionIds.includes(q.id) && q.id.length > 24); // MongoDB ObjectIds are 24 chars usually. UUIDs are 36.
-
-            // Actually, let's just do a Bulk Create for any selected AI questions
-            // This is getting complex for a single file edit.
-            // Let's assume for now we just show them.
-
-            // RE-PLAN: API should save. I will fix API in next step.
-
             const payload = {
                 ...formData,
                 examId: selectedExam,
@@ -185,9 +174,8 @@ export default function CreateTestPage() {
 
             await api.post('/tests', payload);
             toast.success('Test Published Successfully!');
-            // Reset
-            setFormData(prev => ({ ...prev, title: '' }));
-            setSelectedQuestionIds([]);
+            // Redirect to tests list after publishing
+            router.push('/admin/tests');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to create test');
         } finally {

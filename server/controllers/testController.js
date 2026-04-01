@@ -212,7 +212,7 @@ const submitTest = async (req, res) => {
     try {
         const { responses = [], tabSwitchWarnings, isAutoSubmitted, completionTimeMinutes } = req.body;
 
-        // Prevent duplicate submissions
+        // Prevent duplicate submissions — return the existing result so client can redirect
         const existingResult = await TestResult.findOne({ studentId: req.user._id, testId: req.params.id });
         if (existingResult) {
             return res.status(409).json({ message: 'You have already submitted this test.', resultId: existingResult._id });
@@ -271,7 +271,7 @@ const submitTest = async (req, res) => {
         const result = await TestResult.create({
             studentId: req.user._id,
             testId: test._id,
-            score,
+            score: Math.max(0, score), // Clamp: never go below 0
             accuracy,
             responses: processedResponses,
             tabSwitchWarnings: tabSwitchWarnings || 0,
@@ -659,6 +659,9 @@ const generateSmartTest = async (req, res) => {
         let examId = req.user.selectedExam;
         if (!examId) {
             const anyExam = await require('../models/Exam').findOne();
+            if (!anyExam) {
+                return res.status(404).json({ message: 'No exam found in the system. Please contact admin.' });
+            }
             examId = anyExam._id;
         }
 

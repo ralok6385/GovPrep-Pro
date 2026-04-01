@@ -20,8 +20,10 @@ const updateProfileSchema = z.object({
     body: z.object({
         name: z.string().min(2).optional(),
         email: z.string().email().optional(),
+        password: z.string().min(6).optional().or(z.literal('')),
         targetExam: z.string().optional(),
         language: z.string().optional(),
+        avatar: z.string().optional(),
     })
 });
 

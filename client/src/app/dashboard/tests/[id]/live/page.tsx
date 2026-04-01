@@ -50,6 +50,7 @@ export default function LiveTestPage() {
     const [timeLeft, setTimeLeft] = useState(0);
     const [isdrawerOpen, setDrawerOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [language, setLanguage] = useState<'en' | 'hi'>('hi'); // Default to Hindi as per request
@@ -62,11 +63,15 @@ export default function LiveTestPage() {
         if (!test || test.type === 'quiz') return;
 
         const handleViolation = (type: string) => {
+            // Don't raise new violations after auto-submit has already triggered
+            if (hasAutoSubmitted) return;
+
             setWarningCount(prev => {
                 const newCount = prev + 1;
                 // Only toast if not already at limit (limit handled by useEffect)
                 if (newCount < 3) {
                     toast.error(`Warning ${newCount}/2: ${type === 'visibility' ? 'Please do not switch tabs.' : (type === 'focus loss' ? 'Please stay on this window.' : 'Please stay in Fullscreen.')} Your activity is being monitored.`, {
+                        id: `violation-warning-${newCount}`, // deduplicate identical toasts
                         duration: 6000,
                         icon: '⚠️',
                         style: { border: '2px solid #ef4444', padding: '16px', color: '#b91c1c', fontWeight: 'bold' }
@@ -136,7 +141,7 @@ export default function LiveTestPage() {
             window.removeEventListener('cut', preventDefault);
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [test, submitting]);
+    }, [test, submitting, hasAutoSubmitted]);
 
     const enterFullscreen = () => {
         const elem = document.documentElement;
@@ -150,14 +155,15 @@ export default function LiveTestPage() {
 
     // Handle Auto-Submission on 3 violations
     useEffect(() => {
-        if (warningCount >= 3 && !submitting) {
+        if (warningCount >= 3 && !submitting && !hasAutoSubmitted) {
+            setHasAutoSubmitted(true);
             toast.error('Multiple violations detected. Auto-submitting the test.', {
                 duration: 5000,
                 icon: '🚫'
             });
             confirmSubmit(true, warningCount);
         }
-    }, [warningCount, submitting]);
+    }, [warningCount, submitting, hasAutoSubmitted]);
 
     // Fetch Test
     useEffect(() => {
@@ -223,7 +229,15 @@ export default function LiveTestPage() {
                         if (parsed.answers) setAnswers(parsed.answers);
                         if (parsed.markedReview) setMarkedReview(parsed.markedReview);
                         if (parsed.visited) setVisited(parsed.visited);
-                        if (parsed.warningCount) setWarningCount(parsed.warningCount);
+                        // Only restore warning count if below auto-submit threshold
+                        // If >= 3, the session was already auto-submitted — mark as done
+                        if (parsed.warningCount) {
+                            if (parsed.warningCount >= 3) {
+                                setHasAutoSubmitted(true);
+                            } else {
+                                setWarningCount(parsed.warningCount);
+                            }
+                        }
 
                         // Calculate recovered jump
                         if (parsed.startTime) {
@@ -441,9 +455,20 @@ export default function LiveTestPage() {
                 router.replace(`/dashboard/analysis/${data._id}`);
             }, 300);
 
-        } catch (error) {
+        } catch (error: any) {
+            // 409 = already submitted — redirect to existing result instead of erroring
+            if (error.response?.status === 409 && error.response?.data?.resultId) {
+                localStorage.removeItem(`live_test_${params.id}_${user?._id}`);
+                if (document.fullscreenElement) {
+                    try { await document.exitFullscreen(); } catch (e) { /* ignore */ }
+                }
+                setTimeout(() => {
+                    router.replace(`/dashboard/analysis/${error.response.data.resultId}`);
+                }, 300);
+                return;
+            }
             console.error(error);
-            toast.error('Submission Failed');
+            toast.error('Submission Failed. Please try again.');
             setSubmitting(false);
             setShowSubmitModal(false);
         }

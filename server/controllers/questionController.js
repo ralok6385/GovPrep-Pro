@@ -87,45 +87,50 @@ const autoTranslateQuestion = async (qData) => {
 // @route   POST /api/questions
 // @access  Private/Admin
 const createQuestion = async (req, res) => {
-    let {
-        text,
-        textHindi,
-        options,
-        correctOption,
-        explanation,
-        explanationHindi,
-        subjectId,
-        difficulty,
-        topic,
-        year,
-        source,
-        tags,
-    } = req.body;
+    try {
+        let {
+            text,
+            textHindi,
+            options,
+            correctOption,
+            explanation,
+            explanationHindi,
+            subjectId,
+            difficulty,
+            topic,
+            year,
+            source,
+            tags,
+        } = req.body;
 
-    // Auto-Translate if Hindi missing
-    if (!textHindi) {
-        const translated = await autoTranslateQuestion({ text, textHindi, options, explanation, explanationHindi });
-        textHindi = translated.textHindi;
-        explanationHindi = translated.explanationHindi;
-        options = translated.options;
+        // Auto-Translate if Hindi missing
+        if (!textHindi) {
+            const translated = await autoTranslateQuestion({ text, textHindi, options, explanation, explanationHindi });
+            textHindi = translated.textHindi;
+            explanationHindi = translated.explanationHindi;
+            options = translated.options;
+        }
+
+        const question = await Question.create({
+            text,
+            textHindi,
+            options,
+            correctOption,
+            explanation,
+            explanationHindi,
+            subjectId,
+            difficulty,
+            topic: topic || 'General',
+            year: year || undefined,
+            source: source || undefined,
+            tags: tags || [],
+        });
+
+        res.status(201).json(question);
+    } catch (error) {
+        console.error('[CreateQuestion Error]:', error);
+        res.status(500).json({ message: 'Failed to create question', error: error.message });
     }
-
-    const question = await Question.create({
-        text,
-        textHindi,
-        options,
-        correctOption,
-        explanation,
-        explanationHindi,
-        subjectId,
-        difficulty,
-        topic: topic || 'General',
-        year: year || undefined,
-        source: source || undefined,
-        tags: tags || [],
-    });
-
-    res.status(201).json(question);
 };
 
 // @desc    Bulk create questions (for Excel/CSV upload)
@@ -179,8 +184,13 @@ const bulkCreateQuestions = async (req, res) => {
 // @route   GET /api/questions/subject/:subjectId
 // @access  Private/Admin
 const getQuestionsBySubject = async (req, res) => {
-    const questions = await Question.find({ subjectId: req.params.subjectId });
-    res.json(questions);
+    try {
+        const questions = await Question.find({ subjectId: req.params.subjectId });
+        res.json(questions);
+    } catch (error) {
+        console.error('[GetQuestionsBySubject Error]:', error);
+        res.status(500).json({ message: 'Failed to fetch questions for subject' });
+    }
 };
 
 // @desc    Get all questions (with search/filter support)
@@ -415,7 +425,8 @@ const getPYQQuestions = async (req, res) => {
                 .lean(),
             Question.countDocuments(filter),
             Question.distinct('year', { year: { $exists: true, $ne: null } }),
-            Question.distinct('source', { source: { $exists: true, $ne: null, $ne: '' } })
+            // Fix: duplicate $ne keys is invalid JS — second overwrites first. Use $nin instead.
+            Question.distinct('source', { source: { $exists: true, $nin: [null, ''] } })
         ]);
 
         res.json({

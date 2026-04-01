@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { fetchContent, ContentItem } from '@/services/contentService';
 import { FileText, PlayCircle, Lock, Download, ExternalLink, Search } from 'lucide-react';
-import { toast } from 'react-hot-toast';
 
 export default function StudyMaterialPage() {
     const [content, setContent] = useState<ContentItem[]>([]);
@@ -18,9 +17,12 @@ export default function StudyMaterialPage() {
         setLoading(true);
         try {
             const data = await fetchContent(undefined, 'pdf'); // Strictly PDF
-            setContent(data);
+            setContent(data || []);
         } catch (error) {
-            toast.error('Failed to load study material');
+            // Silently handle - show empty state rather than error toast
+            // (could be empty DB, not a true error for the user)
+            setContent([]);
+            console.error('Study material fetch failed:', error);
         } finally {
             setLoading(false);
         }
