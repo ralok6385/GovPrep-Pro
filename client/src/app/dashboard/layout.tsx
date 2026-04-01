@@ -60,6 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!user || user.role === 'admin') return null; // Redirecting via useEffect
 
     const isLiveTest = pathname.includes('/live');
+    const isProfile = pathname === '/dashboard/profile';
 
     if (isLiveTest) {
         return (
@@ -122,34 +123,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </aside>
 
             {/* Mobile Header - Hidden on lg screens */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-[#0c0a1a]/80 warm:bg-[#fffbf0]/80 backdrop-blur-xl border-b border-indigo-100/30 dark:border-indigo-900/20 warm:border-stone-200/50 supports-[backdrop-filter]:bg-white/50">
-                <div className="max-w-md mx-auto px-5 h-16 flex justify-between items-center">
-                    <Link href="/dashboard/profile" className="flex items-center gap-3 group">
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 overflow-hidden relative border border-indigo-200">
-                                {user.avatar ? (
-                                    <img
-                                        src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${user.avatar}`}
-                                        alt={user.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-indigo-600 font-bold">
-                                        {user.name.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
+            {!isProfile && (
+                <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-[#0c0a1a]/80 warm:bg-[#fffbf0]/80 backdrop-blur-xl border-b border-indigo-100/30 dark:border-indigo-900/20 warm:border-stone-200/50 supports-[backdrop-filter]:bg-white/50">
+                    <div className="max-w-md mx-auto px-5 h-16 flex justify-between items-center">
+                        <Link href="/dashboard/profile" className="flex items-center gap-3 group">
+                            <div className="relative">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 overflow-hidden relative border border-indigo-200">
+                                    {user.avatar ? (
+                                        <img
+                                            src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${user.avatar}`}
+                                            alt={user.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-indigo-600 font-bold">
+                                            {user.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
-                        </div>
-                        <div>
-                            <p className="text-xs text-slate-500 font-medium group-hover:text-indigo-600 transition-colors">Welcome back,</p>
-                            <h1 className="text-sm font-bold text-slate-800 leading-none group-hover:text-indigo-700 transition-colors">{user.name.split(' ')[0]}</h1>
-                        </div>
-                    </Link>
+                            <div>
+                                <p className="text-xs text-slate-500 font-medium group-hover:text-indigo-600 transition-colors">Welcome back,</p>
+                                <h1 className="text-sm font-bold text-slate-800 leading-none group-hover:text-indigo-700 transition-colors">{user.name.split(' ')[0]}</h1>
+                            </div>
+                        </Link>
 
-                    <NotificationBell />
-                </div>
-            </header>
+                        <NotificationBell />
+                    </div>
+                </header>
+            )}
 
             {/* Desktop Header - Add Notification Bell to top right for Desktop too */}
             <div className="hidden lg:flex fixed top-4 right-8 z-50">
