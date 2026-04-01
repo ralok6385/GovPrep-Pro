@@ -5,8 +5,13 @@ const Subject = require('../models/Subject');
 // @route   GET /api/exams
 // @access  Public
 const getExams = async (req, res) => {
-    const exams = await Exam.find({ isActive: true });
-    res.json(exams);
+    try {
+        const exams = await Exam.find({ isActive: true });
+        res.json(exams);
+    } catch (error) {
+        console.error('[GetExams Error]:', error);
+        res.status(500).json({ message: 'Server error retrieving exams' });
+    }
 };
 
 // @desc    Create an exam

@@ -19,6 +19,13 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const validate = require('../middleware/validate');
 const { signupSchema, loginSchema, updateProfileSchema } = require('../validations/authValidation');
 
+const fs = require('fs');
+
+// Ensure uploads directory exists for cases where it's gitignored on cloud host
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads', { recursive: true });
+}
+
 // Configure Multer Storage
 const storage = multer.diskStorage({
     destination(req, file, cb) {

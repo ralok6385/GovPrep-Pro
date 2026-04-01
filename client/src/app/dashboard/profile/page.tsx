@@ -40,11 +40,20 @@ export default function ProfilePage() {
     const [dragging, setDragging] = useState(false);
 
     const [exams, setExams] = useState<any[]>([]);
+    const [examsLoaded, setExamsLoaded] = useState(false);
 
     useEffect(() => {
         // Fetch exams for selection
         import('@/lib/api').then(mod => {
-            mod.default.get('/exams').then(res => setExams(res.data));
+            mod.default.get('/exams')
+                .then(res => {
+                    setExams(res.data);
+                    setExamsLoaded(true);
+                })
+                .catch(err => {
+                    console.error('Failed to load exams for profile:', err);
+                    setExamsLoaded(true);
+                });
         });
     }, []);
 
@@ -209,18 +218,24 @@ export default function ProfilePage() {
                                 <div>
                                     <label className="block text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-2 ml-1">Example Target Exam</label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {exams.length > 0 ? exams.map((exam) => (
-                                            <button
-                                                key={exam._id}
-                                                type="button"
-                                                onClick={() => setTargetExam(exam.name)}
-                                                className={`py-3 rounded-2xl text-xs font-black tracking-widest uppercase transition-all border-2 ${targetExam === exam.name
-                                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-500/30'
-                                                    : 'bg-white dark:bg-slate-900 warm:bg-[#fffbf0] text-slate-500 border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
-                                            >
-                                                {exam.name.replace('RRB ', '')}
-                                            </button>
-                                        )) : <div className="col-span-2 text-sm text-slate-400 font-medium">Loading exams...</div>}
+                                        {!examsLoaded ? (
+                                            <div className="col-span-2 text-sm text-slate-400 font-medium">Loading exams...</div>
+                                        ) : exams.length > 0 ? (
+                                            exams.map((exam) => (
+                                                <button
+                                                    key={exam._id}
+                                                    type="button"
+                                                    onClick={() => setTargetExam(exam.name)}
+                                                    className={`py-3 rounded-2xl text-xs font-black tracking-widest uppercase transition-all border-2 ${targetExam === exam.name
+                                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-500/30'
+                                                        : 'bg-white dark:bg-slate-900 warm:bg-[#fffbf0] text-slate-500 border-slate-200 dark:border-slate-800 hover:border-indigo-300'}`}
+                                                >
+                                                    {exam.name.replace('RRB ', '')}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-2 text-sm text-slate-400 font-medium">No target exams available.</div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
