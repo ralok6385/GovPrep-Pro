@@ -50,6 +50,9 @@ function checkFileType(file, cb) {
 
 const upload = multer({
     storage,
+    // SECURITY: Limit avatar uploads to 2MB — prevents DoS via large file uploads.
+    // The general upload middleware had a 50MB limit but this endpoint had none.
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     },

@@ -83,8 +83,10 @@ userSchema.pre('save', async function () {
     if (!this.isModified('password')) {
         return;
     }
-    // Rounds 8 is safe and ~4x faster than 10 on low-CPU environments (Render free tier)
-    const salt = await bcrypt.genSalt(8);
+    // SECURITY: OWASP recommends bcrypt cost factor >= 12.
+    // Factor 12 adds ~100ms per hash on a free-tier server, which is acceptable
+    // for an auth endpoint and makes offline brute-force attacks ~16x harder than factor 8.
+    const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);
 });
 

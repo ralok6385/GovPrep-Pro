@@ -25,13 +25,25 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     useEffect(() => {
         if (user) {
             const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
-            const newSocket = io(socketUrl);
+
+            // SECURITY: Pass JWT in handshake auth so the server can verify identity
+            // before allowing the socket to join a private notification room.
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const newSocket = io(socketUrl, {
+                auth: { token },
+            });
 
             newSocket.on('connect', () => {
                 console.log('Socket connected:', newSocket.id);
-                newSocket.emit('join_dashboard', user._id);
+                // SECURITY: Send { userId, token } so the server verifies ownership
+                // before joining user_${userId} room (MED-8 fix)
+                newSocket.emit('join_dashboard', { userId: user._id, token });
             });
 
+            // Handle auth errors from the server (invalid token, unauthorized room)
+            newSocket.on('auth_error', (err: { message: string }) => {
+                console.warn('[Socket] Auth error:', err.message);
+            });
             newSocket.on('new_test_alert', (data) => {
                 setNotifications(prev => [data, ...prev]);
                 toast.custom((t) => (

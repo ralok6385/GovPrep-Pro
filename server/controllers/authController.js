@@ -3,8 +3,10 @@ const User = require('../models/User');
 require('../models/Exam'); // Fix: Ensure Exam model is registered for populate
 
 const generateToken = (id) => {
+    // SECURITY: 7-day expiry reduces the window for token misuse vs the previous 30 days.
+    // For long-lived sessions, implement a refresh token flow.
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn: '7d',
     });
 };
 
@@ -20,8 +22,12 @@ const authUser = async (req, res) => {
             return res.status(503).json({ message: 'Database connection initializing, please try again.' });
         }
 
+        // SECURITY: Normalize email before lookup to prevent duplicate accounts
+        // via case differences (e.g. User@Example.com vs user@example.com)
+        const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
+
         // Only select fields needed for login — faster query, no populate
-        const user = await User.findOne({ email }).select(
+        const user = await User.findOne({ email: normalizedEmail }).select(
             '_id name email password role targetExam language avatar streak xp level badges'
         );
 
@@ -194,7 +200,8 @@ const selectExam = async (req, res) => {
         }
     } catch (error) {
         console.error('[SelectExam Error]:', error);
-        res.status(500).json({ message: 'Server error updating exam preference', error: error.message });
+        // SECURITY: Do not expose error.message to clients — it may leak internal details
+        res.status(500).json({ message: 'Server error updating exam preference' });
     }
 };
 
@@ -389,13 +396,16 @@ const forgotPassword = async (req, res) => {
             attempts: 0
         });
 
-        // In production, send OTP via email/SMS here.
-        console.log(`[Password Reset OTP] Email: ${email} | OTP: ${otp}`);
+        // TODO: Integrate a real SMS/Email provider (e.g. Twilio, SendGrid) to deliver the OTP.
+        // SECURITY: Never log OTPs — they are credentials. Remove or redact from all logs.
+        // The OTP is intentionally NOT logged here.
+        console.log(`[Password Reset] OTP generated for: ${email.replace(/(.{2}).*(@.*)/, '$1***$2')}`);
 
         const maskedPhone = '****' + inputPhone.slice(-4);
         res.json({
             message: `A 6-digit verification code has been sent. Check your registered phone (${maskedPhone}).`,
-            ...(process.env.NODE_ENV !== 'production' && { devOTP: otp })
+            // SECURITY: devOTP removed — never return credentials in API responses, even in dev.
+            // Check server logs during development for the masked email confirmation.
         });
     } catch (error) {
         console.error('[Forgot Password Error]:', error);

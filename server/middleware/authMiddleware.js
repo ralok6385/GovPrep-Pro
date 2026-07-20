@@ -40,7 +40,11 @@ const protect = async (req, res, next) => {
             }
             // Return 503 if it's a timeout/connection error, otherwise 500
             const status = error.message.includes('buffering timed out') || error.message.includes('topology') ? 503 : 500;
-            return res.status(status).json({ message: 'Server error during authentication', error: error.message });
+            // SECURITY: Do not expose error.message to clients in production
+            const clientMessage = status === 503
+                ? 'Service temporarily unavailable. Please retry.'
+                : 'Server error during authentication';
+            return res.status(status).json({ message: clientMessage });
         }
     }
 

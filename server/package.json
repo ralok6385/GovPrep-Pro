@@ -26,6 +26,7 @@
     "express-rate-limit": "^8.3.0",
     "google-translate-api-x": "^10.7.2",
     "groq-sdk": "^1.1.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mammoth": "^1.11.0",
     "mongoose": "^8.10.0",

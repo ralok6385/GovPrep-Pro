@@ -1,0 +1,32 @@
+# ── Secret & Credentials ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Node modules ─────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Uploads directory (user-uploaded files — not for version control) ─────────
+uploads/*
+!uploads/.gitkeep
+
+# ── Debug & Utility Scripts (dev-only) ───────────────────────────────────────
+debug_*.js
+debug_*.txt
+test_*.js
+check_data.js
+inspect_result.js
+list_*.js
+find_*.js
+verify_*.js
+delete_*.js
+fix_*.js
+relink_*.js
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS cruft ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

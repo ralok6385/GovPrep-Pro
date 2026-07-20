@@ -49,27 +49,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                  registration.unregister();
-                }
-              });
-            }
-            try {
-              const theme = localStorage.getItem('theme');
-              if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-              } else if (theme === 'light') {
-                document.documentElement.classList.add('light');
-              } else if (theme === 'warm') {
-                document.documentElement.classList.add('warm');
-              }
-            } catch (e) {}
-          `
-        }} />
+        {/*
+         * SECURITY: Theme initialization is loaded as a static external script
+         * (/public/theme-init.js) instead of dangerouslySetInnerHTML to comply
+         * with Content-Security-Policy script-src 'self' — no 'unsafe-inline' needed.
+         * The script runs synchronously before React hydrates, preventing FOUC.
+         */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="/theme-init.js" />
       </head>
       <body
         className={`${plusJakarta.variable} ${manrope.variable} antialiased`}

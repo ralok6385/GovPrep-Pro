@@ -1,6 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
 const compression = require('compression');
 const { rateLimit } = require('express-rate-limit');
 const connectDB = require('./config/db');
@@ -15,46 +16,70 @@ connectDB();
 const app = express();
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 
 const server = http.createServer(app);
-// Socket.io with permissive CORS
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-        credentials: true
-    }
-});
 
-// Middleware
-app.use(compression()); // Gzip all responses (~70% size reduction)
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Production-grade CORS — allow Vercel + local dev
+// ─── Production-grade CORS allowlist ─────────────────────────────────────────
 const ALLOWED_ORIGINS = [
     'https://gov-prep-pro.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
 ];
 
-app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, Render health pings)
-        if (!origin) return callback(null, true);
-        // Allow any Vercel preview URL for this project
-        if (
-            ALLOWED_ORIGINS.includes(origin) ||
-            origin.endsWith('.vercel.app')
-        ) {
-            return callback(null, true);
-        }
-        // In production, reject unknown origins. In dev, allow all.
-        if (process.env.NODE_ENV === 'production') {
-            return callback(new Error(`CORS: origin ${origin} not allowed`), false);
-        }
-        callback(null, true); // Dev-mode fallback
+const corsOriginCheck = (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Render health pings)
+    if (!origin) return callback(null, true);
+    // Allow any Vercel preview URL for this project
+    if (
+        ALLOWED_ORIGINS.includes(origin) ||
+        /^https:\/\/gov-prep-pro(-[a-z0-9]+)?\.vercel\.app$/.test(origin)
+    ) {
+        return callback(null, true);
+    }
+    // In production, reject unknown origins. In dev, allow all.
+    if (process.env.NODE_ENV === 'production') {
+        return callback(new Error(`CORS: origin ${origin} not allowed`), false);
+    }
+    callback(null, true); // Dev-mode fallback
+};
+
+// ─── Socket.io — SECURITY: use ALLOWED_ORIGINS, not wildcard ─────────────────
+// Using origin: "*" with credentials: true violates the CORS spec and enables
+// Cross-Site WebSocket Hijacking (CSWSH). Use the explicit allowlist instead.
+const io = new Server(server, {
+    cors: {
+        origin: (origin, callback) => corsOriginCheck(origin, callback),
+        methods: ['GET', 'POST'],
+        credentials: true,
     },
+});
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+
+// SECURITY: Helmet sets 14+ protective HTTP headers and removes X-Powered-By.
+// We disable contentSecurityPolicy here because Next.js handles CSP via headers()
+// in next.config.ts. On the API server itself, we set a restrictive default-src.
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'none'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+        },
+    },
+    crossOriginEmbedderPolicy: false, // Not needed for a JSON API
+}));
+
+app.use(compression()); // Gzip all responses (~70% size reduction)
+
+// SECURITY: Reduced from 50mb — large JSON bodies are a DoS vector.
+// File uploads go through multer (memory/disk), not the JSON body parser.
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
+
+app.use(cors({
+    origin: corsOriginCheck,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -62,15 +87,13 @@ app.use(cors({
 
 // --- RATE LIMITING ---
 // General API rate limit: 1000 requests per 15 minutes per IP
-// Vercel + dashboard polling means we need a high cap. skipSuccessfulRequests
-// means only failed/errored requests count toward the limit.
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 1000,
     message: { message: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
-    skipSuccessfulRequests: false, // count all so we track total load
+    skipSuccessfulRequests: false,
 });
 
 // Strict auth rate limit: prevents brute force on login/signup
@@ -117,8 +140,20 @@ app.options('/{*path}', cors());
 const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     maxAge: '7d', // Cache static uploads for 7 days
-    immutable: true
+    immutable: true,
 }));
+
+// ─── Socket.io Authentication Helper ─────────────────────────────────────────
+// Verifies a JWT token from the socket handshake auth object.
+// Returns the decoded payload or null if invalid.
+const verifySocketToken = (token) => {
+    if (!token || typeof token !== 'string') return null;
+    try {
+        return jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        return null;
+    }
+};
 
 // Socket connection logic
 const { findMatch, submitAnswer, handleDisconnect } = require('./controllers/battleController');
@@ -131,8 +166,28 @@ io.on('connection', (socket) => {
         console.log(`[Socket] Active connections: ~${io.engine.clientsCount || socketConnections}`);
     }
 
-    // Dashboard Notifications
-    socket.on('join_dashboard', (userId) => {
+    // SECURITY: Authenticate before allowing a user to join a private room.
+    // Previously any socket could join any user's notification room by guessing a userId.
+    socket.on('join_dashboard', (data) => {
+        // Support both legacy string userId and new { userId, token } object format
+        const { userId, token } = typeof data === 'object' && data !== null
+            ? data
+            : { userId: data, token: socket.handshake.auth?.token };
+
+        const decoded = verifySocketToken(token);
+
+        if (!decoded) {
+            // Reject unauthenticated dashboard joins silently
+            socket.emit('auth_error', { message: 'Authentication required to join dashboard.' });
+            return;
+        }
+
+        // Ensure the user can only join their own room (not impersonate others)
+        if (String(decoded.id) !== String(userId)) {
+            socket.emit('auth_error', { message: 'Unauthorized room access.' });
+            return;
+        }
+
         socket.join(`user_${userId}`);
     });
 
@@ -158,7 +213,7 @@ app.use((req, res, next) => {
 
 // Basic Route
 app.get('/', (req, res) => {
-    res.send('API is running...');
+    res.json({ status: 'API is running' });
 });
 
 app.get('/api/health', (req, res) => {
@@ -166,7 +221,7 @@ app.get('/api/health', (req, res) => {
     const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
     res.json({
         status: state === 1 ? 'ok' : 'error',
-        dbState: states[state] || 'unknown'
+        dbState: states[state] || 'unknown',
     });
 });
 
@@ -194,13 +249,18 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/bookmarks', require('./routes/bookmarkRoutes'));
 
 // --- GLOBAL ERROR HANDLER (must be after all routes) ---
-// Catches any errors thrown in route handlers that aren't caught by try-catch
+// SECURITY: Never expose stack traces or raw error messages to clients in production.
 app.use((err, req, res, next) => {
-    console.error('[Global Error Handler]:', err.message);
     const status = err.status || err.statusCode || 500;
+
+    // Log full details server-side for debugging
+    console.error(`[Global Error Handler] ${req.method} ${req.path} → ${status}: ${err.message}`);
+
+    // Send a safe, generic error to the client
     res.status(status).json({
-        message: err.message || 'Internal Server Error',
-        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+        message: status < 500 ? (err.message || 'Request error') : 'Internal Server Error',
+        // Only include stack in development for debugging — never in production
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     });
 });
 
@@ -211,7 +271,7 @@ process.on('uncaughtException', (err) => {
     // Don't exit — let the server keep running for other requests
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     console.error('[UNHANDLED REJECTION]:', reason);
     // Don't exit — let the server keep running
 });
@@ -245,3 +305,6 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 module.exports = { app, server };
+
+
+// Connect to database
