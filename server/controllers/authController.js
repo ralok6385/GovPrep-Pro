@@ -82,7 +82,13 @@ const registerUser = async (req, res) => {
     try {
         const { name, email, password, phone, targetExam, language } = req.body;
 
-        const userExists = await User.findOne({ email });
+        // SECURITY: Normalize email to prevent duplicate accounts via case differences
+        const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
+        if (!normalizedEmail) {
+            return res.status(400).json({ message: 'Valid email is required' });
+        }
+
+        const userExists = await User.findOne({ email: normalizedEmail });
 
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
@@ -100,7 +106,7 @@ const registerUser = async (req, res) => {
 
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             password,
             phone,
             targetExam: targetExam || 'NTPC',
@@ -278,12 +284,14 @@ const updateProfileImage = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            // Configure base URL (should be env var but using request context for now)
-            const protocol = req.protocol;
-            const host = req.get('host');
-            const baseUrl = `${protocol}://${host}`;
+            // SECURITY: Never construct URLs from request headers (Host Header Injection).
+            // Use a trusted environment variable instead.
+            const baseUrl = process.env.BACKEND_URL ||
+                process.env.RENDER_EXTERNAL_URL ||
+                `http://localhost:${process.env.PORT || 5001}`;
 
-            user.avatar = `${baseUrl}/${req.file.path}`; // e.g. http://localhost:5000/uploads/image-123.jpg
+            // Use req.file.filename (just the filename) to build a clean URL
+            user.avatar = `${baseUrl}/uploads/${req.file.filename}`;
             const updatedUser = await user.save();
 
             res.json({

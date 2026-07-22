@@ -4,8 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from 'react-hot-toast';
-
 import { NotificationProvider } from "@/context/NotificationContext";
+
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
@@ -41,6 +41,24 @@ export const viewport = {
   userScalable: false,
 };
 
+// Theme init script — runs before React hydrates to prevent flash of wrong theme.
+// This is a static, hardcoded string (no user input). Safe from XSS.
+// NOTE: next/script strategy="beforeInteractive" is NOT supported in App Router
+// layouts (Next.js 16) — it causes the self.__next_r invariant hydration error
+// that breaks all React event handlers. dangerouslySetInnerHTML is the correct
+// approach for pre-hydration scripts in App Router.
+const themeInitScript = `
+(function(){try{
+  var t=localStorage.getItem('theme');
+  var v=['dark','light','warm'];
+  if(t&&v.indexOf(t)===-1)t=null;
+  if(t==='dark')document.documentElement.classList.add('dark');
+  else if(t==='light')document.documentElement.classList.add('light');
+  else if(t==='warm')document.documentElement.classList.add('warm');
+  else if(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('dark');
+}catch(e){}})();
+`.trim();
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -49,14 +67,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/*
-         * SECURITY: Theme initialization is loaded as a static external script
-         * (/public/theme-init.js) instead of dangerouslySetInnerHTML to comply
-         * with Content-Security-Policy script-src 'self' — no 'unsafe-inline' needed.
-         * The script runs synchronously before React hydrates, preventing FOUC.
-         */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/theme-init.js" />
+        {/* eslint-disable-next-line react/no-danger */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
         className={`${plusJakarta.variable} ${manrope.variable} antialiased`}

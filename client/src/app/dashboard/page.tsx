@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
-import { BookOpen, Play, Train, ArrowRight, Bell, Star, Clock, Sparkles, ChevronRight, Zap, Trophy, FileText, TrendingUp, AlertCircle, History, Target, Swords } from 'lucide-react';
+import { BookOpen, Play, Train, ArrowRight, Bell, Star, Clock, Sparkles, ChevronRight, Zap, Trophy, FileText, TrendingUp, AlertCircle, History, Target, Swords, CalendarDays, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import ExamCategories from '@/components/Dashboard/ExamCategories';
 import CheckRankWidget from '@/components/Dashboard/CheckRankWidget';
@@ -16,9 +16,48 @@ import XPProgress from '@/components/Dashboard/XPProgress';
 
 import { ContentItem, Subject } from '@/types';
 
+// Helper: get YouTube embed URL from any YouTube link format
+function getYTEmbed(url: string): string | null {
+    if (!url) return null;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11
+        ? `https://www.youtube.com/embed/${match[2]}?autoplay=1&rel=0`
+        : null;
+}
+
+function getYTThumb(url: string): string | null {
+    if (!url) return null;
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11
+        ? `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg`
+        : null;
+}
+
+// Exam countdown configuration
+const EXAM_DATES: Record<string, { name: string; date: string }> = {
+    'NTPC CBT-1': { name: 'RRB NTPC CBT-1', date: '2025-09-01' },
+    'Group D': { name: 'RRB Group D', date: '2025-10-15' },
+    'ALP': { name: 'RRB ALP', date: '2025-11-01' },
+    'JE': { name: 'RRB JE', date: '2025-12-01' },
+};
+
+function useCountdown(targetExam?: string) {
+    const examEntry = Object.entries(EXAM_DATES).find(([key]) =>
+        targetExam?.toLowerCase().includes(key.toLowerCase())
+    );
+    if (!examEntry) return null;
+    const [, { name, date }] = examEntry;
+    const diff = Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+    return diff > 0 ? { name, daysLeft: diff } : null;
+}
+
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const countdown = useCountdown(user?.targetExam);
+    const [videoModal, setVideoModal] = useState<{ url: string; title: string } | null>(null);
     const [recentVideos, setRecentVideos] = useState<ContentItem[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [stats, setStats] = useState<any>(null);
@@ -87,7 +126,8 @@ export default function Dashboard() {
 
 
     return (
-        <div className="max-w-7xl mx-auto p-4 pb-24 lg:p-8 lg:pb-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <>
+            <div className="max-w-7xl mx-auto p-4 pb-24 lg:p-8 lg:pb-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
             {/* CENTER COLUMN (Main Content) */}
             <div className="lg:col-span-8 space-y-6 pt-16 lg:pt-0">
@@ -106,15 +146,30 @@ export default function Dashboard() {
                     </p>
                 </div>
 
+                {/* Exam Countdown Banner */}
+                {countdown && (
+                    <div className="mb-6 bg-gradient-to-r from-rose-500 to-orange-500 rounded-2xl p-4 flex items-center gap-4 shadow-lg shadow-rose-500/20">
+                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                            <CalendarDays className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-white/80 text-xs font-bold uppercase tracking-wider">{countdown.name} Exam</p>
+                            <p className="text-white font-black text-xl">{countdown.daysLeft} days left</p>
+                        </div>
+                        <div className="bg-white/20 px-3 py-1.5 rounded-xl text-white text-xs font-bold shrink-0">Stay Focused 🎯</div>
+                    </div>
+                )}
+
                 {/* Today's Focus Section */}
                 <div className="mb-10">
                     <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <Target className="w-4 h-4" />
                         Today's Focus
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Horizontal scroll on mobile, 3-col grid on md+ */}
+                    <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:overflow-x-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
                         {/* 1. Daily Quiz Card */}
-                        <Link href="/dashboard/tests?type=quiz" className="bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-1 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 warm:border-stone-200 shadow-[0_2px_16px_rgba(79,70,229,0.06)] hover:shadow-xl transition-all group relative overflow-hidden">
+                        <Link href="/dashboard/tests?type=quiz" className="snap-start shrink-0 w-[260px] md:w-auto bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-1 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 warm:border-stone-200 shadow-[0_2px_16px_rgba(79,70,229,0.06)] hover:shadow-xl transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Zap className="w-24 h-24 text-amber-500 -mr-4 -mt-4 rotate-12" />
                             </div>
@@ -137,13 +192,13 @@ export default function Dashboard() {
                             </div>
                         </Link>
 
-                        {/* 2. Streak Card (Wrapped Widget) */}
-                        <div className="h-full">
+                        {/* 2. Streak Card */}
+                        <div className="snap-start shrink-0 w-[260px] md:w-auto h-full">
                             <StreakWidget />
                         </div>
 
                         {/* 3. Recommended Mock */}
-                        <div onClick={() => router.push('/dashboard/tests?type=exam')} className="bg-gradient-to-br from-indigo-600 to-indigo-700 p-1 rounded-[2rem] shadow-lg shadow-indigo-500/20 cursor-pointer group relative overflow-hidden text-white h-full">
+                        <div onClick={() => router.push('/dashboard/tests?type=exam')} className="snap-start shrink-0 w-[260px] md:w-auto bg-gradient-to-br from-indigo-600 to-indigo-700 p-1 rounded-[2rem] shadow-lg shadow-indigo-500/20 cursor-pointer group relative overflow-hidden text-white h-full">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                             <div className="p-5 h-full flex flex-col justify-between relative z-10">
                                 <div className="flex justify-between items-start mb-4">
@@ -563,6 +618,7 @@ export default function Dashboard() {
                 </Link>
 
                 {/* New Lectures List */}
+                {/* New Lectures List */}
                 <div>
                     <div className="flex items-center justify-between mb-5">
                         <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -579,37 +635,30 @@ export default function Dashboard() {
                             [1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-200 rounded-3xl animate-pulse"></div>)
                         ) : recentVideos.length > 0 ? (
                             recentVideos.map(video => {
-                                const getYTThumb = (url: string) => {
-                                    if (!url) return null;
-                                    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                                    const match = url.match(regExp);
-                                    return (match && match[2].length === 11) ? `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg` : null;
-                                };
-                                const youtubeThumb = getYTThumb(video.url);
-
+                                const ytThumb = getYTThumb(video.url);
                                 return (
-                                    <a
+                                    <button
                                         key={video._id}
-                                        href={video.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="group bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 flex items-center gap-4 transition-all duration-300"
+                                        onClick={() => setVideoModal({ url: video.url, title: video.title })}
+                                        className="group w-full bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 flex items-center gap-4 transition-all duration-300 text-left"
                                     >
                                         <div className="w-24 aspect-video rounded-xl bg-slate-800 relative overflow-hidden shrink-0 shadow-lg border border-slate-700/50">
                                             <img
-                                                src={youtubeThumb || (video as any).thumbnail || `https://images.unsplash.com/photo-1474487056289-622c50b76e1d?q=80&w=300&auto=format&fit=crop`}
+                                                src={ytThumb || (video as any).thumbnail || `https://images.unsplash.com/photo-1474487056289-622c50b76e1d?q=80&w=300&auto=format&fit=crop`}
                                                 alt={video.title}
                                                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                 onError={(e: any) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?q=80&w=300&auto=format&fit=crop'; }}
                                             />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/0 transition-colors">
-                                                <Play className="w-4 h-4 text-white fill-current opacity-80 group-hover:scale-125 transition-transform" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+                                                <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                                                    <Play className="w-3.5 h-3.5 text-rose-600 fill-rose-600 ml-0.5" />
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div className="flex-1 min-w-0">
                                             <span className="text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-widest block mb-0.5">
-                                                {video.subjectId?.name || 'General'}
+                                                {(video as any).subjectId?.name || 'General'}
                                             </span>
                                             <h3 className="font-bold text-slate-800 dark:text-white text-[13px] leading-snug line-clamp-2 transition-colors">
                                                 {video.title}
@@ -619,7 +668,7 @@ export default function Dashboard() {
                                         <div className="text-slate-300 group-hover:text-indigo-600 transition-colors shrink-0">
                                             <ChevronRight className="w-5 h-5" />
                                         </div>
-                                    </a>
+                                    </button>
                                 );
                             })
                         ) : (
@@ -632,5 +681,37 @@ export default function Dashboard() {
                 </div>
             </div>
         </div>
+
+            {/* In-App Video Modal */}
+            {videoModal && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={() => setVideoModal(null)}>
+                    <div className="relative w-full max-w-3xl" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setVideoModal(null)}
+                            className="absolute -top-10 right-0 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors text-white z-10"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <p className="text-white font-bold text-sm mb-3 truncate pr-10">{videoModal.title}</p>
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-2xl">
+                            {getYTEmbed(videoModal.url) ? (
+                                <iframe
+                                    src={getYTEmbed(videoModal.url)!}
+                                    className="w-full h-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-white/60 text-sm">
+                                    Video not available
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
+
+

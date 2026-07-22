@@ -1,13 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fetchContent, ContentItem } from '@/services/contentService';
-import { FileText, PlayCircle, Lock, Download, ExternalLink, Search } from 'lucide-react';
+import { FileText, Lock, Search, X } from 'lucide-react';
 
 export default function StudyMaterialPage() {
     const [content, setContent] = useState<ContentItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeSubject, setActiveSubject] = useState<string>('all');
+
+    const subjects = useMemo(() => {
+        const seen = new Set<string>();
+        const list: string[] = [];
+        content.forEach(item => {
+            const name = (item as any).subjectId?.name || item.topicName;
+            if (name && !seen.has(name)) { seen.add(name); list.push(name); }
+        });
+        return list;
+    }, [content]);
+
+    const filteredContent = useMemo(() =>
+        content.filter(item => {
+            const subjectName = (item as any).subjectId?.name || item.topicName;
+            const matchesSubject = activeSubject === 'all' || subjectName === activeSubject;
+            const matchesSearch = !searchQuery ||
+                item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.topicName.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSubject && matchesSearch;
+        })
+    , [content, activeSubject, searchQuery]);
 
     useEffect(() => {
         loadContent();
@@ -28,33 +50,60 @@ export default function StudyMaterialPage() {
         }
     };
 
-    const filteredContent = content.filter(item =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.topicName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     return (
-        <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+        <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Study Material</h1>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium">Download premium PDF notes for your preparation.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-1">Study Material</h1>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Download premium PDF notes for your preparation.</p>
                 </div>
 
                 {/* Search */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Search PDF topics..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-64 transition-colors shadow-sm"
-                        />
-                    </div>
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder="Search PDF topics..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 pr-8 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none w-full transition-colors shadow-sm text-sm"
+                    />
+                    {searchQuery && (
+                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
+
+                {/* Subject Filter Chips */}
+                {subjects.length > 0 && (
+                    <div className="flex gap-2 flex-wrap">
+                        <button
+                            onClick={() => setActiveSubject('all')}
+                            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                activeSubject === 'all'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                            }`}
+                        >
+                            All Subjects
+                        </button>
+                        {subjects.map(subj => (
+                            <button
+                                key={subj}
+                                onClick={() => setActiveSubject(subj)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                    activeSubject === subj
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                                }`}
+                            >
+                                {subj}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Content Grid */}

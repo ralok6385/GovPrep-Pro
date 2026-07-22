@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { Play, ArrowLeft, Clock, Search, Filter, Sparkles, X } from 'lucide-react';
+import { Play, ArrowLeft, Clock, Search, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import EmptyState from '@/components/Common/EmptyState';
@@ -14,11 +14,35 @@ export default function LecturesPage() {
     const [lectures, setLectures] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeSubject, setActiveSubject] = useState<string>('all');
+    // In-app video player state (replaces external YouTube tabs)
+    const [activeVideo, setActiveVideo] = useState<{title: string, url: string, youtubeId: string | null} | null>(null);
     const [selectedSummary, setSelectedSummary] = useState<{title: string, content: string, status: string} | null>(null);
 
-    useEffect(() => {
-        fetchLectures();
-    }, []);
+    const getYTId = (url: string): string | null => {
+        if (!url) return null;
+        const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
+    const getYTThumb = (url: string) => {
+        const id = getYTId(url);
+        return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+    };
+
+    useEffect(() => { fetchLectures(); }, []);
+
+    const subjects = useMemo(() => {
+        const seen = new Set<string>();
+        const list: {id: string, name: string}[] = [];
+        lectures.forEach(v => {
+            const id = v.subjectId?._id;
+            const name = v.subjectId?.name;
+            if (id && name && !seen.has(id)) { seen.add(id); list.push({ id, name }); }
+        });
+        return list;
+    }, [lectures]);
 
     const fetchLectures = async () => {
         try {
@@ -32,8 +56,11 @@ export default function LecturesPage() {
     };
 
     const filteredLectures = lectures.filter(video =>
-        video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        video.subjectId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        (activeSubject === 'all' || video.subjectId?._id === activeSubject) &&
+        (
+            video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            video.subjectId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
     );
 
     return (
@@ -53,15 +80,49 @@ export default function LecturesPage() {
 
                 {/* Search */}
                 <div className="relative max-w-2xl mx-auto">
-                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 warm:text-stone-400" />
+                    <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
                         type="text"
                         placeholder="Search topics..."
-                        className="w-full pl-10 pr-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 warm:border-stone-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900 warm:bg-[#fffbf0] shadow-sm text-slate-800 dark:text-white warm:text-stone-800 placeholder:text-slate-400 dark:placeholder:text-slate-500 warm:placeholder:text-stone-400 theme-transition"
+                        className="w-full pl-10 pr-4 py-3 rounded-full border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-white placeholder:text-slate-400"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    {searchTerm && (
+                        <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
+
+                {/* Subject Filter Chips */}
+                {subjects.length > 0 && (
+                    <div className="flex gap-2 flex-wrap">
+                        <button
+                            onClick={() => setActiveSubject('all')}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                activeSubject === 'all'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
+                                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                            }`}
+                        >
+                            All Subjects
+                        </button>
+                        {subjects.map(s => (
+                            <button
+                                key={s.id}
+                                onClick={() => setActiveSubject(s.id)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                                    activeSubject === s.id
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
+                                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                                }`}
+                            >
+                                {s.name}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10 animate-pulse">
@@ -76,21 +137,15 @@ export default function LecturesPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-5 gap-y-10">
                         {filteredLectures.map((video) => {
-                            const getYTThumb = (url: string) => {
-                                if (!url) return null;
-                                const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                                const match = url.match(regExp);
-                                return (match && match[2].length === 11) ? `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg` : null;
-                            };
-                            const youtubeThumb = getYTThumb(video.url);
+                            const youtubeId = getYTId(video.url);
+                            const youtubeThumb = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null;
 
                             return (
                                 <div key={video._id} className="group flex flex-col gap-3 relative">
-                                    <a
-                                        href={video.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="relative block"
+                                    {/* Thumbnail — opens in-app player on click */}
+                                    <button
+                                        onClick={() => setActiveVideo({ title: video.title, url: video.url, youtubeId })}
+                                        className="relative block w-full text-left"
                                     >
                                         {/* Thumbnail Area */}
                                         <div className="aspect-video w-full relative overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center">
@@ -100,24 +155,19 @@ export default function LecturesPage() {
                                                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                                 onError={(e: any) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1532102235608-dc8fc689c9ab?q=80&w=800&auto=format&fit=crop'; }}
                                             />
-
-                                            {/* Play Button Overlay (Subtle) */}
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                                                <div className="w-12 h-12 rounded-full bg-indigo-600/90 text-white flex items-center justify-center scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 shadow-xl">
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                                                <div className="w-14 h-14 rounded-full bg-white/90 text-red-600 flex items-center justify-center scale-75 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 shadow-xl">
                                                     <Play className="w-6 h-6 fill-current ml-1" />
                                                 </div>
                                             </div>
-
-                                            {/* Duration Badge */}
                                             <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-md text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shadow-lg">
-                                                <span>{video.duration || 'Video'}</span>
+                                                <span>{video.duration || 'Watch'}</span>
                                             </div>
-
                                             {video.isPremium && (
                                                 <div className="absolute top-2 left-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-lg">PRO</div>
                                             )}
                                         </div>
-                                    </a>
+                                    </button>
 
                                     {/* Content Area */}
                                     <div className="flex gap-3">
@@ -188,7 +238,6 @@ export default function LecturesPage() {
                         className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-8 duration-300"
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Modal Header */}
                         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
@@ -199,26 +248,19 @@ export default function LecturesPage() {
                                     <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md truncate">{selectedSummary.title}</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setSelectedSummary(null)}
-                                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-colors"
-                            >
+                            <button onClick={() => setSelectedSummary(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
-
-                        {/* Modal Body */}
                         <div className="p-6 overflow-y-auto min-h-[300px]">
                             {selectedSummary.status === 'processing' || selectedSummary.status === 'pending' ? (
                                 <div className="flex flex-col items-center justify-center h-full py-12">
-                                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+                                    <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
                                     <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">AI is Analyzing...</h3>
-                                    <p className="text-slate-500 text-sm mt-2 text-center max-w-sm">
-                                        The AI is currently watching the video and extracting key points. This usually takes just 1-2 minutes. Please check back later!
-                                    </p>
+                                    <p className="text-slate-500 text-sm mt-2 text-center max-w-sm">The AI is currently watching the video and extracting key points. Check back in 1-2 minutes!</p>
                                 </div>
                             ) : selectedSummary.content ? (
-                                <div className="text-slate-700 dark:text-slate-300 [&>h1]:text-2xl [&>h1]:font-black [&>h1]:mb-6 [&>h1]:text-indigo-900 [&>h1]:dark:text-indigo-400 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-6 [&>ul]:space-y-2 [&>li]:leading-relaxed [&>strong]:text-indigo-700 [&>strong]:dark:text-indigo-300">
+                                <div className="text-slate-700 dark:text-slate-300 [&>h1]:text-2xl [&>h1]:font-black [&>h1]:mb-6 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:mt-8 [&>h2]:mb-4 [&>p]:mb-4 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:mb-6 [&>li]:leading-relaxed [&>strong]:text-indigo-700">
                                     <ReactMarkdown>{selectedSummary.content}</ReactMarkdown>
                                 </div>
                             ) : (
@@ -227,21 +269,61 @@ export default function LecturesPage() {
                                         <span className="text-2xl">😞</span>
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300">No Summary Available</h3>
-                                    <p className="text-slate-500 text-sm mt-2">
-                                        We couldn't generate a summary for this video. It might not have closed captions or the video is too short.
-                                    </p>
+                                    <p className="text-slate-500 text-sm mt-2">We couldn't generate a summary for this video.</p>
                                 </div>
                             )}
                         </div>
-
-                        {/* Modal Footer */}
                         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-end">
-                            <button 
-                                onClick={() => setSelectedSummary(null)}
-                                className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-sm transition-transform hover:scale-105"
-                            >
+                            <button onClick={() => setSelectedSummary(null)} className="px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl text-sm transition-transform hover:scale-105">
                                 Close Summary
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* In-App Video Player Modal */}
+            {activeVideo && (
+                <div className="fixed inset-0 bg-black/90 z-[60] flex flex-col items-center justify-center p-4" onClick={() => setActiveVideo(null)}>
+                    <div className="w-full max-w-4xl" onClick={e => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between mb-3 px-1">
+                            <h2 className="font-bold text-white text-sm line-clamp-1 flex-1 mr-4">{activeVideo.title}</h2>
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={activeVideo.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-bold text-indigo-300 hover:text-white border border-indigo-500/50 px-3 py-1.5 rounded-lg transition-colors"
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    Open YouTube ↗
+                                </a>
+                                <button onClick={() => setActiveVideo(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Video Player */}
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-2xl">
+                            {activeVideo.youtubeId ? (
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${activeVideo.youtubeId}?autoplay=1&rel=0&modestbranding=1`}
+                                    title={activeVideo.title}
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    className="w-full h-full border-0"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                                    <Play className="w-16 h-16 opacity-40" />
+                                    <p className="text-sm opacity-60">Can't embed this video</p>
+                                    <a href={activeVideo.url} target="_blank" rel="noopener noreferrer" className="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-sm transition-colors">
+                                        Watch on YouTube
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -249,3 +331,5 @@ export default function LecturesPage() {
         </div>
     );
 }
+
+

@@ -54,7 +54,7 @@ export default function BattlePage() {
     useEffect(() => {
         if (!user) return;
 
-        const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
+        const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
         const newSocket = io(socketUrl, {
             transports: ['websocket'],

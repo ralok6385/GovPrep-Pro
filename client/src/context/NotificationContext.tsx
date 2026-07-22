@@ -24,7 +24,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     useEffect(() => {
         if (user) {
-            const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002';
+            const socketUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
             // SECURITY: Pass JWT in handshake auth so the server can verify identity
             // before allowing the socket to join a private notification room.

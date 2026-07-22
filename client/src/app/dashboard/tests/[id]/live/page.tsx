@@ -394,6 +394,38 @@ export default function LiveTestPage() {
         setAnswers(prev => ({ ...prev, [qId]: idx }));
     };
 
+    // Keyboard Shortcuts (NTA Style)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if typing in input/textarea or if modal is open
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) || showSubmitModal) {
+                return;
+            }
+
+            const currentQ = currentQuestionsList[currentQIndex];
+            if (!currentQ) return;
+
+            if (e.key === '1' || e.key === 'a' || e.key === 'A') {
+                handleOptionSelect(currentQ._id, 0);
+            } else if (e.key === '2' || e.key === 'b' || e.key === 'B') {
+                handleOptionSelect(currentQ._id, 1);
+            } else if (e.key === '3' || e.key === 'c' || e.key === 'C') {
+                handleOptionSelect(currentQ._id, 2);
+            } else if (e.key === '4' || e.key === 'd' || e.key === 'D') {
+                handleOptionSelect(currentQ._id, 3);
+            } else if (e.key === 'ArrowRight' || e.key === 'n' || e.key === 'N') {
+                handleNext();
+            } else if (e.key === 'ArrowLeft' || e.key === 'p' || e.key === 'P') {
+                handlePrev();
+            } else if (e.key === 'm' || e.key === 'M') {
+                handleMarkForReview();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentQIndex, currentQuestionsList, showSubmitModal]);
+
     const getPaletteStatus = (qId: string) => {
         const isAns = answers[qId] !== undefined;
         const isMarked = markedReview[qId];

@@ -4,12 +4,12 @@
 import { useState } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, Cell
 } from 'recharts';
-import { Target, Trophy, Clock, Zap, ArrowLeft, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Target, Trophy, Clock, Zap, ArrowLeft, TrendingUp, AlertCircle, CheckCircle2, Brain } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDashboardStats, useMyRank } from '@/hooks/useAPI';
+import WeaknessHeatmap from '@/components/Dashboard/WeaknessHeatmap';
 
 interface AnalyticsData {
     totalTests: number;
@@ -115,42 +115,62 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
 
-                {/* Subject Performance */}
-                <div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Subject Strength Analysis</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {data.subjectPerformance.map((subj: any) => (
-                            <div key={subj.subject} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-                                <div className={`absolute top-0 right-0 w-1.5 h-full ${subj.status === 'Strong' ? 'bg-emerald-500' :
-                                    subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
-                                    }`}></div>
-
-                                <div className="flex items-center justify-between mb-4">
-                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{subj.subject}</span>
-                                    <span className={`text-[10px] font-extrabold px-2 py-1 rounded-md uppercase tracking-wider ${subj.status === 'Strong' ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
-                                        subj.status === 'Average' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
-                                        }`}>
-                                        {subj.status}
-                                    </span>
-                                </div>
-
-                                <div className="flex items-end justify-between font-extrabold">
-                                    <span className="text-2xl text-slate-800 dark:text-white">{subj.percentage}%</span>
-                                    <span className="text-xs text-slate-400 mb-1">Accuracy</span>
-                                </div>
-
-                                <div className="mt-4 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all duration-1000 ${subj.status === 'Strong' ? 'bg-emerald-500' :
-                                            subj.status === 'Average' ? 'bg-amber-500' : 'bg-rose-500'
-                                            }`}
-                                        style={{ width: `${subj.percentage}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))}
+                {/* Subject Performance - Better List View */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <Brain className="w-5 h-5 text-purple-500" />
+                            Subject Strength Analysis
+                        </h3>
+                        <span className="text-xs font-bold text-slate-400">{data.subjectPerformance.length} subjects</span>
                     </div>
+
+                    <div className="space-y-4">
+                        {[...data.subjectPerformance]
+                            .sort((a: any, b: any) => b.percentage - a.percentage)
+                            .map((subj: any) => {
+                                const pct = subj.percentage;
+                                const color = pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-rose-500';
+                                const textColor = pct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400';
+                                const badge = pct >= 70 ? 'Strong ✓' : pct >= 40 ? 'Average' : 'Weak ⚠';
+                                const badgeBg = pct >= 70 ? 'bg-emerald-50 dark:bg-emerald-900/30' : pct >= 40 ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-rose-50 dark:bg-rose-900/30';
+                                return (
+                                    <div key={subj.subject}>
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{subj.subject}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-xs font-bold ${textColor} ${badgeBg} px-2 py-0.5 rounded-full`}>{badge}</span>
+                                                <span className="text-sm font-black text-slate-800 dark:text-white tabular-nums">{pct}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full ${color} rounded-full transition-all duration-1000`}
+                                                style={{ width: `${pct}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        }
+                    </div>
+
+                    {/* Weak areas quick CTA */}
+                    {data.subjectPerformance.some((s: any) => s.percentage < 50) && (
+                        <div className="mt-6 p-4 bg-rose-50 dark:bg-rose-900/10 rounded-2xl border border-rose-100 dark:border-rose-900/30 flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm font-bold text-rose-700 dark:text-rose-400">
+                                    Focus on: {data.subjectPerformance.filter((s: any) => s.percentage < 50).map((s: any) => s.subject).join(', ')}
+                                </p>
+                                <p className="text-xs text-rose-600/80 dark:text-rose-400/80 mt-0.5">These subjects need attention to improve your rank</p>
+                            </div>
+                        </div>
+                    )}
                 </div>
+
+                {/* Weakness Heatmap Widget */}
+                <WeaknessHeatmap />
 
                 {/* Personalized Insight Section */}
                 <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden">

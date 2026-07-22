@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Train, CheckCircle2, ShieldCheck, Languages } from 'lucide-react';
+import { Train, CheckCircle2, ShieldCheck, Languages, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SignupPage() {
@@ -18,6 +18,7 @@ export default function SignupPage() {
     });
     const { signup } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,7 +90,7 @@ export default function SignupPage() {
                         <p className="text-[#64748b] dark:text-[#94a3b8] text-[17px] font-medium tracking-tight">Get your free account and begin your preparation.</p>
                     </div>
 
-                    <form className="space-y-5" onSubmit={handleSubmit}>
+                    <form className="space-y-5" method="POST" onSubmit={handleSubmit}>
                         <div className="grid grid-cols-2 gap-5">
                             <div>
                                 <label className="block text-[12px] font-black text-[#334155] dark:text-[#cbd5e1] uppercase tracking-[0.1em] mb-2.5 ml-1">Full Name</label>
@@ -171,16 +172,26 @@ export default function SignupPage() {
 
                         <div>
                             <label className="block text-[12px] font-black text-[#334155] dark:text-[#cbd5e1] uppercase tracking-[0.1em] mb-2.5 ml-1">Password</label>
-                            <input
-                                type="password"
-                                required
-                                name="password"
-                                autoComplete="new-password"
-                                className="block w-full px-5 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] tracking-[0.2em] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
-                                placeholder="Create Password"
-                                value={formData.password}
-                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            />
+                            <div className="relative group">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    name="password"
+                                    autoComplete="new-password"
+                                    className="block w-full pl-5 pr-12 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] tracking-[0.2em] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
+                                    placeholder="Create Password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(prev => !prev)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#94a3b8] hover:text-[#6366f1] dark:hover:text-white transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
                         </div>
 
                         <button

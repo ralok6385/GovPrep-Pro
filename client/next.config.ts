@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 // ─── Security: Validate backend URL to prevent SSRF ─────────────────────────
 // Only allow known safe hostnames in the rewrite destination.
@@ -35,26 +36,37 @@ function getSafeBackendUrl(): string {
 // YouTube embeds use img.youtube.com → img-src covers thumbnails.
 // Socket.io uses ws/wss → connect-src covers WebSocket connections.
 const isProd = process.env.NODE_ENV === 'production';
+const isDev = !isProd;
 const backendHost = isProd ? 'https://govprep-backend.onrender.com' : 'http://localhost:5001';
 const wsBackendHost = isProd ? 'wss://govprep-backend.onrender.com' : 'ws://localhost:5001';
 
+// SECURITY: 'unsafe-eval' is ONLY added in development because Webpack's hot
+// module replacement (HMR) uses eval() for source maps. In production (Next.js
+// build output), eval() is never used — so the stricter policy applies.
 const ContentSecurityPolicy = `
   default-src 'self';
-  script-src 'self';
+  script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''};
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com;
   img-src 'self' data: blob: https://img.youtube.com https://images.unsplash.com ${backendHost};
-  connect-src 'self' ${backendHost} ${wsBackendHost};
+  connect-src 'self' ${backendHost} ${wsBackendHost}${isDev ? ' ws://localhost:3000 http://localhost:3000' : ''};
   media-src 'self' blob:;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
-  upgrade-insecure-requests;
+  ${isProd ? 'upgrade-insecure-requests;' : ''}
 `.replace(/\s{2,}/g, ' ').trim();
+
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+
+  // Force Turbopack to resolve relative to the client folder instead of the user's home directory.
+  // This resolves public/ static asset mapping errors in local dev mode.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 
   // SECURITY: React Strict Mode catches unsafe lifecycles and deprecated patterns.
   // Re-enabled — the double-render in dev is intentional and worth the safety.

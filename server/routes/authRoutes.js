@@ -37,14 +37,17 @@ const storage = multer.diskStorage({
 });
 
 function checkFileType(file, cb) {
-    const filetypes = /jpg|jpeg|png/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
+    // SECURITY: Check both extension AND MIME type to prevent file type spoofing
+    const allowedExtensions = /\.(jpg|jpeg|png|webp)$/i;
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
-    if (extname && mimetype) {
+    const extOk = allowedExtensions.test(path.extname(file.originalname));
+    const mimeOk = allowedMimeTypes.includes(file.mimetype);
+
+    if (extOk && mimeOk) {
         return cb(null, true);
     } else {
-        cb('Images only!');
+        cb(new Error('Only JPG, PNG, and WebP images are allowed'));
     }
 }
 

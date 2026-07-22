@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { BookOpen, Play, Zap, Trophy, FileText, Sparkles, TrendingUp, Medal, Bookmark, Target } from 'lucide-react';
+import { BookOpen, Play, Zap, Trophy, FileText, Sparkles, TrendingUp, Medal, Bookmark, Target, History } from 'lucide-react';
 import MobileBottomNav from '@/components/Layout/MobileBottomNav';
 import NotificationBell from '@/components/Dashboard/NotificationBell';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,7 +29,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 label === 'Study Material' ? 'Notes & PDFs' :
                                     label === 'Full Mock Exams' ? 'Test Series' :
                                         label === 'Daily Quizzes' ? 'Quick Practice' :
-                                            label === 'Lectures' ? 'Video Classes' : ''}
+                                            label === 'Lectures' ? 'Video Classes' :
+                                                label === 'PYQ Practice' ? 'Past Year Papers' : ''}
                         </span>
                     )}
                 </div>
@@ -88,6 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <SidebarItem icon={Zap} label="Daily Quizzes" href="/dashboard/tests?type=quiz" />
                         <SidebarItem icon={Target} label="Topic Practice" href="/dashboard/practice" />
                         <SidebarItem icon={Play} label="Lectures" href="/dashboard/lectures" />
+                        <SidebarItem icon={History} label="PYQ Practice" href="/dashboard/pyq" />
 
                         <div className="pt-4 mt-4">
                             <p className="text-[10px] font-extrabold text-slate-400 dark:text-indigo-400/50 uppercase tracking-[0.25em] mb-2 ml-3">Progress</p>
@@ -104,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 overflow-hidden relative border-2 border-indigo-200/50 dark:border-indigo-700/30 shadow-sm">
                             {user.avatar ? (
                                 <img
-                                    src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${user.avatar}`}
+                                    src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}${user.avatar}`}
                                     alt={user.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -131,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <div className="w-10 h-10 rounded-full bg-indigo-100 overflow-hidden relative border border-indigo-200">
                                     {user.avatar ? (
                                         <img
-                                            src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002'}${user.avatar}`}
+                                            src={user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}${user.avatar}`}
                                             alt={user.name}
                                             className="w-full h-full object-cover"
                                         />

@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, ArrowRight, CheckCircle, XCircle, Lightbulb, Lo
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { Subject, Question, TopicInfo } from '@/types';
+import AIDoubtSolver from '@/components/Common/AIDoubtSolver';
 
 type PracticeState = 'select' | 'playing' | 'review';
 
@@ -99,6 +100,14 @@ export default function PracticePage() {
         setIsAnswered(true);
 
         const isCorrect = optionId === currentQ.correctOption;
+        
+        // Haptic feedback for mobile
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+            try {
+                navigator.vibrate(isCorrect ? 50 : [40, 40, 80]);
+            } catch (e) {}
+        }
+
         setStats(prev => ({
             correct: prev.correct + (isCorrect ? 1 : 0),
             incorrect: prev.incorrect + (isCorrect ? 0 : 1),
@@ -303,9 +312,11 @@ export default function PracticePage() {
                     </div>
 
                     {/* Question Text */}
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-8 leading-relaxed" dangerouslySetInnerHTML={{
-                        __html: language === 'hi' && currentQ.textHindi ? currentQ.textHindi : currentQ.text
-                    }} />
+                    <div className="max-h-52 overflow-y-auto pr-1 mb-6 custom-scrollbar">
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white leading-relaxed" dangerouslySetInnerHTML={{
+                            __html: language === 'hi' && currentQ.textHindi ? currentQ.textHindi : currentQ.text
+                        }} />
+                    </div>
 
                     {/* Options */}
                     <div className="space-y-3">
@@ -345,15 +356,28 @@ export default function PracticePage() {
                     </div>
 
                     {/* Explanation (shown after answering) */}
-                    {isAnswered && (currentQ.explanation || currentQ.explanationHindi) && (
-                        <div className="mt-6 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-5">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Lightbulb className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                                <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Explanation</span>
-                            </div>
-                            <p className="text-sm text-indigo-900 dark:text-indigo-200 leading-relaxed" dangerouslySetInnerHTML={{
-                                __html: language === 'hi' && currentQ.explanationHindi ? currentQ.explanationHindi : (currentQ.explanation || '')
-                            }} />
+                    {isAnswered && (
+                        <div className="mt-6 space-y-4">
+                            {(currentQ.explanation || currentQ.explanationHindi) && (
+                                <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-5">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Lightbulb className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                        <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Explanation</span>
+                                    </div>
+                                    <p className="text-sm text-indigo-900 dark:text-indigo-200 leading-relaxed" dangerouslySetInnerHTML={{
+                                        __html: language === 'hi' && currentQ.explanationHindi ? currentQ.explanationHindi : (currentQ.explanation || '')
+                                    }} />
+                                </div>
+                            )}
+
+                            {/* AI Doubt Tutor */}
+                            <AIDoubtSolver
+                                questionText={currentQ.text}
+                                options={currentQ.options}
+                                correctOption={currentQ.correctOption}
+                                userSelectedOption={selectedOption || undefined}
+                                questionId={currentQ._id}
+                            />
                         </div>
                     )}
 

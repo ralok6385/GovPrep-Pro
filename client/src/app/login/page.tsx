@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiWithRetry, checkServerHealth } from '@/lib/api';
 
@@ -13,6 +13,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { login, user, loading: authLoading } = useAuth();
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -125,7 +126,7 @@ export default function LoginPage() {
                         <p className="text-[#64748b] dark:text-[#94a3b8] text-[17px] font-medium tracking-tight">Enter your credentials to access your dashboard.</p>
                     </div>
 
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+                    <form className="space-y-6" method="POST" onSubmit={handleSubmit}>
                         <div className="space-y-5">
                             <div>
                                 <label className="block text-[13px] font-black text-[#334155] dark:text-[#cbd5e1] uppercase tracking-[0.1em] mb-2.5 ml-1">Email Address</label>
@@ -153,15 +154,23 @@ export default function LoginPage() {
                                         <Lock className="h-[20px] w-[20px] text-[#94a3b8] group-focus-within:text-[#6366f1] dark:group-focus-within:text-[#ffffff] transition-colors" />
                                     </div>
                                     <input
-                                        type="password"
+                                        type={showPassword ? 'text' : 'password'}
                                         required
                                         name="password"
                                         autoComplete="current-password"
-                                        className="block w-full pl-12 pr-5 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] tracking-[0.2em] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
+                                        className="block w-full pl-12 pr-12 py-4 bg-[#f8fafc] hover:bg-[#f1f5f9] focus:bg-[#ffffff] dark:bg-[#0a0a0a] dark:hover:bg-[#111111] dark:focus:bg-[#111111] border border-[#e2e8f0] dark:border-[#ffffff]/10 focus:border-[#6366f1] dark:focus:border-[#ffffff]/30 rounded-2xl text-[#0f172a] dark:text-[#ffffff] placeholder:text-[#94a3b8] dark:placeholder:text-[#64748b] font-semibold text-[16px] tracking-[0.2em] transition-all duration-300 outline-none shadow-sm focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] dark:focus:shadow-[0_0_0_4px_rgba(255,255,255,0.05)]"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(prev => !prev)}
+                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#94a3b8] hover:text-[#6366f1] dark:hover:text-white transition-colors"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -182,9 +191,9 @@ export default function LoginPage() {
                                 </label>
                             </div>
 
-                            <a href="/forgot-password" className="text-[14px] font-bold text-[#0f172a] dark:text-[#ffffff] hover:text-[#6366f1] dark:hover:text-[#818cf8] transition-colors">
+                            <Link href="/forgot-password" className="text-[14px] font-bold text-[#0f172a] dark:text-[#ffffff] hover:text-[#6366f1] dark:hover:text-[#818cf8] transition-colors">
                                 Forgot password?
-                            </a>
+                            </Link>
                         </div>
 
                         <button

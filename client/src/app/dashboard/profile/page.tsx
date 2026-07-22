@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
+import { useDashboardStats, useMyRank } from '@/hooks/useAPI';
+import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
     const { user, updateProfile, uploadProfileImage, logout, loading } = useAuth();
@@ -23,18 +25,24 @@ export default function ProfilePage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [targetExam, setTargetExam] = useState('');
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     
-    // Mock user stats
+    const { data: analyticsData } = useDashboardStats();
+    const { data: rankData } = useMyRank();
+
+    // Real stats from API (not hardcoded)
     const stats = {
-        level: 12,
-        xp: 2450,
-        maxXp: 3000,
-        streak: 7,
-        topPercentile: 10,
-        testsTaken: 24,
-        avgScore: 72,
-        globalRank: 147,
-        studyHours: 48,
+        level: user?.level ?? 1,
+        xp: user?.xp ?? 0,
+        maxXp: (user?.level ?? 1) * 1000,
+        streak: user?.streak ?? 0,
+        topPercentile: rankData?.totalStudents && rankData?.rank !== 'N/A'
+            ? Math.max(1, Math.round(100 - (rankData.rank / rankData.totalStudents) * 100))
+            : null,
+        testsTaken: analyticsData?.totalTests ?? 0,
+        avgScore: analyticsData?.avgAccuracy ? Math.round(analyticsData.avgAccuracy) : 0,
+        globalRank: rankData?.rank !== 'N/A' ? rankData?.rank : null,
+        studyHours: null, // tracked in future
     };
 
     useEffect(() => {
@@ -222,20 +230,26 @@ export default function ProfilePage() {
                     {/* Menu List */}
                     <div className="space-y-1">
                         {/* Notifications Menu Item */}
-                        <div className="flex items-center justify-between py-4 group pr-2">
+                        <div className="flex items-center justify-between py-4 group pr-2 cursor-pointer" onClick={() => {
+                            setNotificationsEnabled(prev => {
+                                const next = !prev;
+                                toast.success(next ? 'Notifications enabled' : 'Notifications muted');
+                                return next;
+                            });
+                        }}>
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <Bell className="w-5 h-5" />
                                 </div>
                                 <span className="font-semibold text-slate-800 dark:text-slate-200">Notifications</span>
                             </div>
-                            <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-indigo-600 transition-colors">
-                                <span className="inline-block h-4 w-4 translate-x-6 rounded-full bg-white transition-transform" />
+                            <button className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notificationsEnabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                             </button>
                         </div>
 
                         {/* Dark Mode */}
-                        <div className="flex items-center justify-between py-4 group pr-2">
+                        <div className="flex items-center justify-between py-4 group pr-2 cursor-pointer" onClick={toggleTheme}>
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
@@ -251,7 +265,7 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Target Exam */}
-                        <Link href="/dashboard/settings/exam" className="flex items-center justify-between py-4 group hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-2xl transition-colors pr-2">
+                        <button onClick={() => setIsEditing(true)} className="w-full flex items-center justify-between py-4 group hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-2xl transition-colors pr-2 text-left">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <Target className="w-5 h-5" />
@@ -262,10 +276,10 @@ export default function ProfilePage() {
                                 <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{targetExam}</span>
                                 <ChevronRight className="w-4 h-4 text-slate-400" />
                             </div>
-                        </Link>
+                        </button>
 
                         {/* Connected Accounts */}
-                        <div className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        <div onClick={() => toast.success(`Connected as ${user.email}`)} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <LinkIcon className="w-5 h-5" />
@@ -276,29 +290,29 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Download Report */}
-                        <div className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        <div onClick={() => router.push('/dashboard/analytics')} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <Download className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Download Report</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">Analytics & PDF Report</span>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
                         {/* Change Password */}
-                        <div className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        <div onClick={() => setIsEditing(true)} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <Lock className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Change Password</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">Edit Credentials</span>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
                         {/* Support & Help */}
-                        <div className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        <div onClick={() => toast.success('Support: support@lalanrailpath.com')} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                                     <HelpCircle className="w-5 h-5" />

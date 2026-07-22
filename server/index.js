@@ -276,7 +276,7 @@ process.on('unhandledRejection', (reason) => {
     // Don't exit — let the server keep running
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 if (process.env.NODE_ENV !== 'test') {
     server.listen(PORT, () => {
@@ -305,6 +305,3 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 module.exports = { app, server };
-
-
-// Connect to database

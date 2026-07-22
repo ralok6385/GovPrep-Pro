@@ -88,10 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const login = async (email: string, password: string) => {
         const { data } = await api.post('/auth/login', { email, password });
         localStorage.setItem('token', data.token);
-        // Cache user data locally for instant future loads
+        // Cache user data locally for instant future loads (strip token from user object)
         const { token: _, ...userData } = data;
         localStorage.setItem('user_data', JSON.stringify(userData));
-        setUser(data);
+        setUser(userData); // ✅ FIXED: was setUser(data) which included token in state
         toast.success('Welcome back!');
         router.push(data.role === 'admin' ? '/admin/dashboard' : '/dashboard');
     };
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('token', data.token);
             const { token: _, ...userOnly } = data;
             localStorage.setItem('user_data', JSON.stringify(userOnly));
-            setUser(data);
+            setUser(userOnly); // ✅ FIXED: strip token from user state
             toast.success('Account created successfully');
             router.push('/dashboard');
         } catch (error: any) {
