@@ -133,6 +133,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const uploadProfileImage = async (file: File) => {
+        // Read client-side preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewUrl = e.target?.result as string;
+            if (previewUrl) {
+                setUser((prev: any) => {
+                    if (!prev) return prev;
+                    const updated = { ...prev, avatar: previewUrl };
+                    localStorage.setItem('user_data', JSON.stringify(updated));
+                    return updated;
+                });
+            }
+        };
+        reader.readAsDataURL(file);
+
         const formData = new FormData();
         formData.append('image', file);
 
@@ -151,12 +166,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 localStorage.setItem('user_data', JSON.stringify(updated));
                 return updated;
             });
-            toast.success('Profile picture updated');
+            toast.success('Profile picture updated!');
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Image upload failed');
             throw error;
         }
     };
+
 
     const logout = () => {
         localStorage.removeItem('token');

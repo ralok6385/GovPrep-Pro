@@ -284,15 +284,15 @@ const updateProfileImage = async (req, res) => {
         const user = await User.findById(req.user._id);
 
         if (user) {
-            // SECURITY: Never construct URLs from request headers (Host Header Injection).
-            // Use a trusted environment variable instead.
-            const baseUrl = process.env.BACKEND_URL ||
-                process.env.RENDER_EXTERNAL_URL ||
-                `http://localhost:${process.env.PORT || 5001}`;
-
-            // Use req.file.filename (just the filename) to build a clean URL
-            user.avatar = `${baseUrl}/uploads/${req.file.filename}`;
+            const fs = require('fs');
+            const fileBuffer = fs.readFileSync(req.file.path);
+            const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+            
+            user.avatar = base64Image;
             const updatedUser = await user.save();
+
+            // Clean up temporary disk file
+            try { fs.unlinkSync(req.file.path); } catch (e) {}
 
             res.json({
                 _id: updatedUser._id,
@@ -312,10 +312,11 @@ const updateProfileImage = async (req, res) => {
             res.status(404).json({ message: 'User not found' });
         }
     } catch (error) {
-        console.error(error);
+        console.error('[UpdateProfileImage Error]:', error);
         res.status(500).json({ message: 'Server error uploading image' });
     }
 };
+
 
 const toggleUserStatus = async (req, res) => {
     try {
