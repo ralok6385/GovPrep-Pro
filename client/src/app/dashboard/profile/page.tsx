@@ -13,6 +13,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useDashboardStats, useMyRank } from '@/hooks/useAPI';
 import toast from 'react-hot-toast';
 
+import UserAvatar from '@/components/UserAvatar';
+
 export default function ProfilePage() {
     const { user, updateProfile, uploadProfileImage, logout, loading } = useAuth();
     const router = useRouter();
@@ -26,7 +28,6 @@ export default function ProfilePage() {
     const [language, setLanguage] = useState('hi');
     const [password, setPassword] = useState('');
     const [saving, setSaving] = useState(false);
-    const [avatarError, setAvatarError] = useState(false);
 
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -55,7 +56,6 @@ export default function ProfilePage() {
             setEmail(user.email || '');
             setTargetExam(user.targetExam || 'NTPC');
             setLanguage(user.language || 'hi');
-            setAvatarError(false);
         }
     }, [user, loading, router]);
 
@@ -128,25 +128,9 @@ export default function ProfilePage() {
 
                         {/* Avatar Container */}
                         <div className="relative mt-8 mb-4">
-                            <label htmlFor="avatar-upload-input" className="block relative w-28 h-28 rounded-full p-1 bg-white dark:bg-slate-900 shadow-xl cursor-pointer group">
-                                <div className="w-full h-full rounded-full border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden relative flex items-center justify-center">
-                                    {user.avatar && !avatarError ? (
-                                        <img
-                                            src={user.avatar}
-                                            alt={user.name}
-                                            className="w-full h-full object-cover"
-                                            onError={() => setAvatarError(true)}
-                                        />
-                                    ) : (
-                                        <span className="text-3xl font-black text-white uppercase tracking-wider">
-                                            {user.name ? user.name[0] : 'U'}
-                                        </span>
-                                    )}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                                        <Camera className="w-6 h-6" />
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-1 right-1 bg-indigo-600 text-white p-2 rounded-full border-2 border-white dark:border-slate-900 shadow-md">
+                            <label htmlFor="avatar-upload-input" className="block relative cursor-pointer group">
+                                <UserAvatar src={user.avatar} name={user.name} size="xl" />
+                                <div className="absolute bottom-0 right-0 bg-indigo-600 text-white p-2 rounded-full border-2 border-white dark:border-slate-900 shadow-md">
                                     <Camera className="w-3.5 h-3.5" />
                                 </div>
                             </label>

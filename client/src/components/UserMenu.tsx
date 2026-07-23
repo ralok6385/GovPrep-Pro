@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { LogOut, User as UserIcon, ChefHat, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
+import UserAvatar from '@/components/UserAvatar';
+
 export default function UserMenu() {
     const { user, logout } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
@@ -36,9 +38,7 @@ export default function UserMenu() {
                     <p className="text-sm font-semibold text-white leading-none">{user.name}</p>
                     <p className="text-xs text-indigo-300 capitalize">{user.role}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg border-2 border-slate-800">
-                    {user.name[0].toUpperCase()}
-                </div>
+                <UserAvatar src={user.avatar} name={user.name} size="md" />
                 <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
