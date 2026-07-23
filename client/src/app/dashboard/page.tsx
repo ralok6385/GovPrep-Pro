@@ -161,32 +161,32 @@ export default function Dashboard() {
                 )}
 
                 {/* Today's Focus Section */}
-                <div className="mb-10">
-                    <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <Target className="w-4 h-4" />
+                <div className="mb-8">
+                    <h2 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Target className="w-4 h-4 text-indigo-500" />
                         Today's Focus
                     </h2>
                     {/* Horizontal scroll on mobile, 3-col grid on md+ */}
                     <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:overflow-x-visible md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
                         {/* 1. Daily Quiz Card */}
-                        <Link href="/dashboard/tests?type=quiz" className="snap-start shrink-0 w-[260px] md:w-auto bg-white dark:bg-slate-900 warm:bg-[#fffbf0] p-1 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 warm:border-stone-200 shadow-[0_2px_16px_rgba(79,70,229,0.06)] hover:shadow-xl transition-all group relative overflow-hidden">
+                        <Link href="/dashboard/tests?type=quiz" className="snap-start shrink-0 w-[260px] md:w-auto bg-white dark:bg-slate-900 p-1 rounded-[2rem] border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-indigo-300 dark:hover:border-indigo-700 transition-all group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Zap className="w-24 h-24 text-amber-500 -mr-4 -mt-4 rotate-12" />
                             </div>
                             <div className="p-5 h-full flex flex-col justify-between relative z-10">
                                 <div className="flex justify-between items-start mb-4">
-                                    <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 warm:bg-amber-100/50 rounded-2xl flex items-center justify-center text-amber-500 shadow-sm">
+                                    <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-amber-500 shadow-sm">
                                         <Zap className="w-5 h-5 fill-current" />
                                     </div>
-                                    <span className="bg-amber-100 dark:bg-amber-900/50 warm:bg-amber-200/50 text-amber-700 dark:text-amber-300 warm:text-amber-800 text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
+                                    <span className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
                                         5 Mins
                                     </span>
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white warm:text-stone-800 text-lg mb-1 group-hover:text-amber-600 transition-colors">Daily Speed Quiz</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 warm:text-stone-500 font-medium leading-relaxed">Boost your speed and accuracy with fresh questions.</p>
+                                    <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-1 group-hover:text-amber-600 transition-colors">Daily Speed Quiz</h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Boost your speed and accuracy with fresh questions.</p>
                                 </div>
-                                <div className="mt-4 flex items-center gap-2 text-amber-600 text-xs font-bold uppercase tracking-wider group-hover:gap-3 transition-all">
+                                <div className="mt-4 flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider group-hover:gap-3 transition-all">
                                     Start Now <ArrowRight className="w-3 h-3" />
                                 </div>
                             </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* 3. Recommended Mock */}
-                        <div onClick={() => router.push('/dashboard/tests?type=exam')} className="snap-start shrink-0 w-[260px] md:w-auto bg-gradient-to-br from-indigo-600 to-indigo-700 p-1 rounded-[2rem] shadow-lg shadow-indigo-500/20 cursor-pointer group relative overflow-hidden text-white h-full">
+                        <div onClick={() => router.push('/dashboard/tests?type=exam')} className="snap-start shrink-0 w-[260px] md:w-auto bg-gradient-to-br from-indigo-600 to-purple-600 p-1 rounded-[2rem] shadow-lg shadow-indigo-500/20 cursor-pointer group relative overflow-hidden text-white h-full hover:scale-[1.02] transition-all">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                             <div className="p-5 h-full flex flex-col justify-between relative z-10">
                                 <div className="flex justify-between items-start mb-4">
@@ -211,7 +211,7 @@ export default function Dashboard() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-white text-lg mb-1">Full Mock Test</h3>
-                                    <p className="text-xs text-indigo-100 font-medium leading-relaxed opacity-90">Test your preparation level against 1000+ students.</p>
+                                    <p className="text-xs text-indigo-100 font-medium leading-relaxed opacity-90">Test your preparation level against top aspirants.</p>
                                 </div>
                                 <div className="mt-4 flex items-center gap-2 text-white text-xs font-bold uppercase tracking-wider bg-white/20 w-fit px-3 py-1.5 rounded-lg hover:bg-white hover:text-indigo-600 transition-all border border-white/10">
                                     Take Challenge
@@ -223,7 +223,7 @@ export default function Dashboard() {
 
                 {/* Quick Access: Practice & Battle */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                    <Link href="/dashboard/practice" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_16px_rgba(79,70,229,0.05)] hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group relative overflow-hidden">
+                    <Link href="/dashboard/practice" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-600 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
                         <div className="relative z-10">
                             <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-3">
@@ -234,7 +234,7 @@ export default function Dashboard() {
                         </div>
                     </Link>
 
-                    <Link href="/dashboard/battle" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-[0_2px_16px_rgba(79,70,229,0.05)] hover:shadow-xl hover:border-rose-400 dark:hover:border-rose-600 transition-all group relative overflow-hidden">
+                    <Link href="/dashboard/battle" className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-rose-400 dark:hover:border-rose-600 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-rose-50 dark:bg-rose-900/10 rounded-bl-[3rem] transition-transform group-hover:scale-125"></div>
                         <div className="relative z-10">
                             <div className="w-10 h-10 bg-rose-100 dark:bg-rose-900/30 rounded-2xl flex items-center justify-center mb-3">
@@ -245,6 +245,7 @@ export default function Dashboard() {
                         </div>
                     </Link>
                 </div>
+
 
                 <div className="mb-8">
                     <XPProgress />

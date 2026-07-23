@@ -119,9 +119,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
-            // Merge with existing user data to prevent losing fields
+            const { token: _, ...userOnly } = data;
             setUser((prev: any) => {
-                const updated = prev ? { ...prev, ...data } : data;
+                const updated = prev ? { ...prev, ...userOnly } : userOnly;
                 localStorage.setItem('user_data', JSON.stringify(updated));
                 return updated;
             });
@@ -145,9 +145,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (data.token) {
                 localStorage.setItem('token', data.token);
             }
-            // Merge with existing user data
+            const { token: _, ...userOnly } = data;
             setUser((prev: any) => {
-                const updated = prev ? { ...prev, ...data } : data;
+                const updated = prev ? { ...prev, ...userOnly } : userOnly;
                 localStorage.setItem('user_data', JSON.stringify(updated));
                 return updated;
             });

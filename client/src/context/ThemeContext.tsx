@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-type Theme = 'light' | 'dark' | 'warm';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
     theme: Theme;
@@ -17,12 +17,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         // Check for saved theme or system preference
         const savedTheme = localStorage.getItem('theme') as Theme;
-        if (savedTheme) {
+        if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
             setTheme(savedTheme);
             applyTheme(savedTheme);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             setTheme('dark');
             applyTheme('dark');
+        } else {
+            setTheme('light');
+            applyTheme('light');
         }
     }, []);
 
@@ -33,11 +36,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
 
     const toggleTheme = () => {
-        let newTheme: Theme = 'light';
-        if (theme === 'light') newTheme = 'dark';
-        else if (theme === 'dark') newTheme = 'warm';
-        else newTheme = 'light';
-
+        const newTheme: Theme = theme === 'light' ? 'dark' : 'light';
         setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
         applyTheme(newTheme);

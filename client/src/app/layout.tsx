@@ -50,11 +50,10 @@ export const viewport = {
 const themeInitScript = `
 (function(){try{
   var t=localStorage.getItem('theme');
-  var v=['dark','light','warm'];
+  var v=['dark','light'];
   if(t&&v.indexOf(t)===-1)t=null;
   if(t==='dark')document.documentElement.classList.add('dark');
   else if(t==='light')document.documentElement.classList.add('light');
-  else if(t==='warm')document.documentElement.classList.add('warm');
   else if(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)document.documentElement.classList.add('dark');
 }catch(e){}})();
 `.trim();

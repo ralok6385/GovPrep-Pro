@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { 
     ArrowLeft, Settings, Camera, Flame, Trophy, Zap, BookOpen,
     ClipboardList, TrendingUp, BarChart2, Clock, Bell, Moon, Sun, Target,
-    Link as LinkIcon, Download, Lock, HelpCircle, LogOut, ChevronRight, CheckCircle2
+    Link as LinkIcon, Download, Lock, HelpCircle, LogOut, ChevronRight, CheckCircle2, ShieldCheck, UserCheck, Languages
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
@@ -18,328 +18,449 @@ export default function ProfilePage() {
     const router = useRouter();
     const { theme, toggleTheme } = useTheme();
 
-    const [exams, setExams] = useState<any[]>([]);
-    
-    // For editing profile state
+    // Profile Edit State
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [targetExam, setTargetExam] = useState('');
+    const [targetExam, setTargetExam] = useState('NTPC');
+    const [language, setLanguage] = useState('hi');
+    const [password, setPassword] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [avatarError, setAvatarError] = useState(false);
+
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    
+
     const { data: analyticsData } = useDashboardStats();
     const { data: rankData } = useMyRank();
 
-    // Real stats from API (not hardcoded)
+    // Real stats from API
     const stats = {
         level: user?.level ?? 1,
         xp: user?.xp ?? 0,
-        maxXp: (user?.level ?? 1) * 1000,
+        maxXp: Math.pow((user?.level ?? 1), 2) * 50,
         streak: user?.streak ?? 0,
         topPercentile: rankData?.totalStudents && rankData?.rank !== 'N/A'
             ? Math.max(1, Math.round(100 - (rankData.rank / rankData.totalStudents) * 100))
             : null,
         testsTaken: analyticsData?.totalTests ?? 0,
         avgScore: analyticsData?.avgAccuracy ? Math.round(analyticsData.avgAccuracy) : 0,
-        globalRank: rankData?.rank !== 'N/A' ? rankData?.rank : null,
-        studyHours: null, // tracked in future
+        globalRank: rankData?.rank !== 'N/A' ? rankData?.rank : 'N/A',
     };
 
     useEffect(() => {
         if (!loading && !user) {
             router.replace('/login');
         } else if (user) {
-            setName(user.name);
-            setEmail(user.email);
-            setTargetExam(user.targetExam || 'NTPC CBT-1');
+            setName(user.name || '');
+            setEmail(user.email || '');
+            setTargetExam(user.targetExam || 'NTPC');
+            setLanguage(user.language || 'hi');
+            setAvatarError(false);
         }
     }, [user, loading, router]);
 
-    if (loading || !user) {
-         return <div className="min-h-[60vh] flex items-center justify-center"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
-    }
+    const handleSaveProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            const updatePayload: any = {
+                name,
+                email,
+                targetExam,
+                language,
+            };
+            if (password && password.trim().length >= 6) {
+                updatePayload.password = password;
+            }
+            await updateProfile(updatePayload);
+            setIsEditing(false);
+            setPassword('');
+        } catch (err: any) {
+            console.error(err);
+        } finally {
+            setSaving(false);
+        }
+    };
 
-    // Settings Mode
-    if (isEditing) {
+    if (loading || !user) {
         return (
-            <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6 pt-20 lg:pt-8">
-                <div className="flex items-center justify-between mb-8">
-                    <button onClick={() => setIsEditing(false)} className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm">
-                        <ArrowLeft className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-                    </button>
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">Edit Profile</h1>
-                    <div className="w-9" />
-                </div>
-                
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Full Name</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-medium text-slate-900 dark:text-white" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Email</label>
-                            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-medium text-slate-900 dark:text-white" />
-                        </div>
-                        <button onClick={async () => {
-                            await updateProfile({ name, email });
-                            setIsEditing(false);
-                        }} className="w-full py-4 mt-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none">Save Changes</button>
-                    </div>
-                </div>
+            <div className="min-h-[70vh] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#f8f9fe] dark:bg-[#0b0f19] relative overflow-hidden pb-24">
-            {/* Top Mesh Gradient Background */}
-            <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-[#e0e7ff] via-[#f3e8ff] to-transparent dark:from-[#1e1b4b] dark:via-[#312e81] dark:to-transparent opacity-80 z-0"></div>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-28 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+            {/* Header / Breadcrumb */}
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-2">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div>
+                            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Scholar Profile</h1>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Manage your target exam, account credentials and performance metrics</p>
+                        </div>
+                    </div>
 
-            <div className="relative z-10 max-w-md mx-auto px-5 pt-12 lg:pt-8 w-full">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <button onClick={() => router.back()} className="p-2 -ml-2 text-indigo-900/80 dark:text-indigo-200 hover:bg-white/20 rounded-full transition-colors">
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-                    <h1 className="text-[17px] font-bold text-indigo-950 dark:text-indigo-100 tracking-wide">Scholar Profile</h1>
-                    <button onClick={() => setIsEditing(true)} className="p-2 -mr-2 text-indigo-900/80 dark:text-indigo-200 hover:bg-white/20 rounded-full transition-colors">
-                        <Settings className="w-6 h-6" />
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-indigo-500/20 transition-all"
+                    >
+                        <Settings className="w-4 h-4" />
+                        {isEditing ? 'Close Editor' : 'Edit Profile'}
                     </button>
                 </div>
+            </div>
 
-                {/* Profile Avatar & Info */}
-                <div className="flex flex-col items-center mb-8">
-                    <div className="relative mb-4 group cursor-pointer">
-                        <label htmlFor="avatar-upload" className="block relative w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-xl shadow-indigo-200 dark:shadow-indigo-900/40 cursor-pointer">
-                            <div className="w-full h-full rounded-full border-4 border-white dark:border-[#0b0f19] bg-slate-100 overflow-hidden relative">
-                                {user.avatar ? (
-                                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-indigo-50 dark:bg-indigo-900/50 pt-2">
-                                        <div className="w-10 h-10 bg-[#2d3748] rounded-full relative">
-                                            <div className="absolute bottom-0 w-full h-1/2 bg-[#4a5568] rounded-t-full"></div>
-                                            <div className="absolute top-1 left-1.5 right-1.5 h-4 bg-[#fbd38d] rounded-full"></div>
-                                        </div>
+            {/* Main Responsive Layout (Desktop 2-column grid) */}
+            <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                {/* LEFT COLUMN: Hero Profile Card */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden text-center flex flex-col items-center">
+                        <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-90"></div>
+
+                        {/* Avatar Container */}
+                        <div className="relative mt-8 mb-4">
+                            <label htmlFor="avatar-upload-input" className="block relative w-28 h-28 rounded-full p-1 bg-white dark:bg-slate-900 shadow-xl cursor-pointer group">
+                                <div className="w-full h-full rounded-full border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden relative flex items-center justify-center">
+                                    {user.avatar && !avatarError ? (
+                                        <img
+                                            src={user.avatar}
+                                            alt={user.name}
+                                            className="w-full h-full object-cover"
+                                            onError={() => setAvatarError(true)}
+                                        />
+                                    ) : (
+                                        <span className="text-3xl font-black text-white uppercase tracking-wider">
+                                            {user.name ? user.name[0] : 'U'}
+                                        </span>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                        <Camera className="w-6 h-6" />
                                     </div>
-                                )}
+                                </div>
+                                <div className="absolute bottom-1 right-1 bg-indigo-600 text-white p-2 rounded-full border-2 border-white dark:border-slate-900 shadow-md">
+                                    <Camera className="w-3.5 h-3.5" />
+                                </div>
+                            </label>
+                            <input
+                                id="avatar-upload-input"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                        uploadProfileImage(e.target.files[0]);
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        {/* User Identity */}
+                        <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{user.name}</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-3">{user.email}</p>
+
+                        <div className="flex flex-wrap justify-center gap-2 mb-6">
+                            <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider rounded-xl border border-indigo-100 dark:border-indigo-800">
+                                LEVEL {stats.level}
+                            </span>
+                            <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider rounded-xl border border-emerald-100 dark:border-emerald-800">
+                                {user.targetExam || 'NTPC'} TARGET
+                            </span>
+                            {user.role === 'admin' && (
+                                <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider rounded-xl border border-amber-100 dark:border-amber-800">
+                                    ADMINISTRATOR
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Level & XP Progress Card */}
+                        <div className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800 text-left">
+                            <div className="flex justify-between items-center text-xs font-bold mb-2">
+                                <span className="text-slate-600 dark:text-slate-300">Level {stats.level}</span>
+                                <span className="text-indigo-600 dark:text-indigo-400 font-black">{stats.xp} / {stats.maxXp} XP</span>
                             </div>
-                            <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1.5 rounded-full border-2 border-white dark:border-[#0b0f19]">
-                                <Camera className="w-3.5 h-3.5" />
+                            <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(100, Math.max(5, (stats.xp / stats.maxXp) * 100))}%` }}
+                                />
                             </div>
-                        </label>
-                        <input
-                            id="avatar-upload"
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                    uploadProfileImage(e.target.files[0]);
-                                }
-                            }}
-                        />
-                    </div>
-                    
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{user.name}</h2>
-                    <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">{user.email}</p>
-                    
-                    <div className="mt-2.5 inline-block px-3 py-1 bg-indigo-100/80 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold rounded-full uppercase tracking-widest border border-indigo-200/50 dark:border-indigo-800/50">
-                        LEVEL {stats.level} • {user.role === 'admin' ? 'ADMINISTRATOR' : 'RAILWAY ASPIRANT'}
+                        </div>
                     </div>
 
-                    <button onClick={() => setIsEditing(true)} className="mt-5 px-6 py-2 rounded-full border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm font-semibold shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                        Edit Profile
-                    </button>
+                    {/* Quick Achievements Card */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Milestones & Badges</h3>
+                        <div className="grid grid-cols-4 gap-2">
+                            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40">
+                                <Flame className="w-5 h-5 text-orange-500 mb-1 animate-pulse" />
+                                <span className="text-[9px] font-black text-orange-700 dark:text-orange-300 text-center leading-tight">{stats.streak}D Streak</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40">
+                                <Trophy className="w-5 h-5 text-amber-500 mb-1" />
+                                <span className="text-[9px] font-black text-amber-700 dark:text-amber-300 text-center leading-tight">Rank #{stats.globalRank}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40">
+                                <Zap className="w-5 h-5 text-indigo-500 mb-1" />
+                                <span className="text-[9px] font-black text-indigo-700 dark:text-indigo-300 text-center leading-tight">Level {stats.level}</span>
+                            </div>
+                            <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 mb-1" />
+                                <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-300 text-center leading-tight">{stats.testsTaken} Mocks</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Main White Card Context */}
-                <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-slate-100/50 dark:border-slate-800">
-                    
-                    {/* XP Progress */}
-                    <div className="mb-6">
-                        <div className="flex justify-between items-end mb-2">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Level {stats.level}</span>
-                            <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{stats.xp.toLocaleString()} / {stats.maxXp.toLocaleString()} XP</span>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Level {stats.level + 1}</span>
+                {/* RIGHT COLUMN: Key Metrics & Settings Section */}
+                <div className="lg:col-span-8 space-y-6">
+
+                    {/* Performance Executive Metric Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+                                <ClipboardList className="w-5 h-5" />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tests Taken</p>
+                            <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{stats.testsTaken}</p>
                         </div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full" style={{ width: `${(stats.xp / stats.maxXp) * 100}%` }}></div>
+
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+                                <TrendingUp className="w-5 h-5" />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Accuracy</p>
+                            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{stats.avgScore}%</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
+                                <BarChart2 className="w-5 h-5" />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Rank</p>
+                            <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">#{stats.globalRank}</p>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+                            <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-3">
+                                <Flame className="w-5 h-5" />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Streak</p>
+                            <p className="text-2xl font-black text-orange-600 dark:text-orange-400 mt-0.5">{stats.streak} Days</p>
                         </div>
                     </div>
 
-                    {/* Quick Stats Badges */}
-                    <div className="grid grid-cols-4 gap-2 mb-8">
-                        <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <Flame className="w-5 h-5 text-orange-500 mb-1" />
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 text-center leading-tight">7-Day<br/>Streak</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <Trophy className="w-5 h-5 text-amber-500 mb-1" />
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 text-center leading-tight">Top<br/>10%</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <Zap className="w-5 h-5 text-amber-400 mb-1" />
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 text-center leading-tight">Speed<br/>King</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                            <BookOpen className="w-5 h-5 text-rose-500 mb-1" />
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 text-center leading-tight">100<br/>Tests</span>
-                        </div>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        {/* Tests Taken */}
-                        <div className="bg-blue-50/70 dark:bg-blue-900/20 p-4 rounded-3xl border border-blue-100/50 dark:border-blue-900/30">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-3">
-                                <ClipboardList className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Tests Taken</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.testsTaken}</p>
-                        </div>
-
-                        {/* Avg Score */}
-                        <div className="bg-emerald-50/70 dark:bg-emerald-900/20 p-4 rounded-3xl border border-emerald-100/50 dark:border-emerald-900/30">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mb-3">
-                                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Avg Score</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.avgScore}%</p>
-                        </div>
-
-                        {/* Global Rank */}
-                        <div className="bg-amber-50/70 dark:bg-amber-900/20 p-4 rounded-3xl border border-amber-100/50 dark:border-amber-900/30">
-                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mb-3">
-                                <BarChart2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Global Rank</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">#{stats.globalRank}</p>
-                        </div>
-
-                        {/* Study Hours */}
-                        <div className="bg-purple-50/70 dark:bg-purple-900/20 p-4 rounded-3xl border border-purple-100/50 dark:border-purple-900/30">
-                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mb-3">
-                                <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Study Hours</p>
-                            <p className="text-2xl font-black text-slate-800 dark:text-slate-100">{stats.studyHours}h</p>
-                        </div>
-                    </div>
-
-                    {/* Menu List */}
-                    <div className="space-y-1">
-                        {/* Notifications Menu Item */}
-                        <div className="flex items-center justify-between py-4 group pr-2 cursor-pointer" onClick={() => {
-                            setNotificationsEnabled(prev => {
-                                const next = !prev;
-                                toast.success(next ? 'Notifications enabled' : 'Notifications muted');
-                                return next;
-                            });
-                        }}>
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                    <Bell className="w-5 h-5" />
+                    {/* EDIT PROFILE FORM MODAL / EXPANDED SECTION */}
+                    {isEditing && (
+                        <form onSubmit={handleSaveProfile} className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border-2 border-indigo-500/30 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                                <div>
+                                    <h3 className="text-lg font-black text-slate-900 dark:text-white">Edit Account Profile</h3>
+                                    <p className="text-xs text-slate-500">Update your details across all devices</p>
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Notifications</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(false)}
+                                    className="text-xs font-bold text-slate-400 hover:text-slate-600"
+                                >
+                                    Cancel
+                                </button>
                             </div>
-                            <button className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notificationsEnabled ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
-                        </div>
 
-                        {/* Dark Mode */}
-                        <div className="flex items-center justify-between py-4 group pr-2 cursor-pointer" onClick={toggleTheme}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Full Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-semibold text-sm text-slate-900 dark:text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-semibold text-sm text-slate-900 dark:text-white"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Exam</label>
+                                    <select
+                                        value={targetExam}
+                                        onChange={e => setTargetExam(e.target.value)}
+                                        className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-semibold text-sm text-slate-900 dark:text-white"
+                                    >
+                                        <option value="NTPC">RRB NTPC</option>
+                                        <option value="Group D">RRB Group D</option>
+                                        <option value="ALP">RRB ALP</option>
+                                        <option value="JE">RRB JE</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Preferred Language</label>
+                                    <select
+                                        value={language}
+                                        onChange={e => setLanguage(e.target.value)}
+                                        className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-semibold text-sm text-slate-900 dark:text-white"
+                                    >
+                                        <option value="hi">Hindi (हिंदी)</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">New Password (Optional)</label>
+                                <input
+                                    type="password"
+                                    placeholder="Leave blank to keep existing password"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    className="w-full p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-semibold text-sm text-slate-900 dark:text-white"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(false)}
+                                    className="px-6 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+                                >
+                                    {saving ? 'Saving...' : 'Save Profile Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+
+                    {/* Account Settings Menu List */}
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-2">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Account Preferences</h3>
+
+                        {/* Theme Toggle (Light / Dark strictly) */}
+                        <div
+                            onClick={toggleTheme}
+                            className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                                     {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Dark Mode</span>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Appearance Mode</p>
+                                    <p className="text-xs text-slate-400">Currently using {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+                                </div>
                             </div>
-                            <button 
-                                onClick={toggleTheme}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}
-                            >
+                            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'}`}>
                                 <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
-                            </button>
+                            </div>
                         </div>
 
-                        {/* Target Exam */}
-                        <button onClick={() => setIsEditing(true)} className="w-full flex items-center justify-between py-4 group hover:bg-slate-50 dark:hover:bg-slate-900/50 rounded-2xl transition-colors pr-2 text-left">
+                        {/* Target Exam Quick Action */}
+                        <div
+                            onClick={() => setIsEditing(true)}
+                            className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                <div className="w-10 h-10 rounded-2xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                                     <Target className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Target Exam</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">{targetExam}</span>
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                            </div>
-                        </button>
-
-                        {/* Connected Accounts */}
-                        <div onClick={() => toast.success(`Connected as ${user.email}`)} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                                    <LinkIcon className="w-5 h-5" />
+                                <div>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Target Exam Goal</p>
+                                    <p className="text-xs text-slate-400">Selected: RRB {targetExam}</p>
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Connected Accounts</span>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
-                        {/* Download Report */}
-                        <div onClick={() => router.push('/dashboard/analytics')} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        {/* Performance Analytics Report */}
+                        <div
+                            onClick={() => router.push('/dashboard/analytics')}
+                            className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                                     <Download className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Analytics & PDF Report</span>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Performance Analytics & PDF Report</p>
+                                    <p className="text-xs text-slate-400">View detailed weakness heatmap and download PDF report</p>
+                                </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
-                        {/* Change Password */}
-                        <div onClick={() => setIsEditing(true)} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        {/* Security Credentials */}
+                        <div
+                            onClick={() => setIsEditing(true)}
+                            className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 flex items-center justify-center">
                                     <Lock className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Edit Credentials</span>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Account Security & Password</p>
+                                    <p className="text-xs text-slate-400">Change your password or login email</p>
+                                </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
-                        {/* Support & Help */}
-                        <div onClick={() => toast.success('Support: support@lalanrailpath.com')} className="flex items-center justify-between py-4 group cursor-pointer pr-2">
+                        {/* Support & Contact */}
+                        <div
+                            onClick={() => toast.success('Support Email: support@lalanrailpath.com')}
+                            className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                                <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                                     <HelpCircle className="w-5 h-5" />
                                 </div>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">Support & Help</span>
+                                <div>
+                                    <p className="font-bold text-sm text-slate-900 dark:text-white">Support & Assistance</p>
+                                    <p className="text-xs text-slate-400">Reach out to Lalan RailPath support team</p>
+                                </div>
                             </div>
                             <ChevronRight className="w-4 h-4 text-slate-400" />
                         </div>
 
                         {/* Logout */}
-                        <button onClick={logout} className="w-full flex items-center justify-between py-4 group cursor-pointer pr-2 mt-4 border-t border-slate-100 dark:border-slate-800/80">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500">
-                                    <LogOut className="w-5 h-5" />
+                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                onClick={logout}
+                                className="w-full p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-between hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <LogOut className="w-4 h-4" />
+                                    <span>Sign Out of Account</span>
                                 </div>
-                                <span className="font-bold text-red-600 dark:text-red-500">Logout</span>
-                            </div>
-                        </button>
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="mt-12 mb-4 text-center">
-                        <p className="text-xs text-slate-400 dark:text-slate-500">Lalan RailPath v2.1.0</p>
-                        <p className="text-[10px] text-slate-400/80 dark:text-slate-600 uppercase tracking-wider mt-1 font-bold flex items-center justify-center gap-1">
-                            MADE WITH <span className="text-red-500 text-xs">❤️</span> FOR RAILWAY ASPIRANTS
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>
