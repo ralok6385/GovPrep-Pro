@@ -73,14 +73,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+            {/* Skip to Main Content Link for Screen Readers */}
+            <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-indigo-600 focus:text-white focus:rounded-xl focus:shadow-lg text-xs font-bold"
+            >
+                Skip to main content
+            </a>
+
             {/* Desktop Navigation (Left Sidebar) */}
-            <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[272px] bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex-col z-50 transition-all duration-300">
+            <aside aria-label="Main Navigation" className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[272px] bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex-col z-50 transition-all duration-300">
                 <div className="p-6 overflow-y-auto custom-scrollbar flex-1 pb-2">
                     <div className="flex items-center gap-2 mb-8 group cursor-pointer">
-                        <img src="/images/lalan_logo.png" alt="Lalan RailPath" className="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
+                        <img src="/images/lalan_logo.png" alt="Lalan RailPath Logo" className="h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
                     </div>
 
-                    <nav className="space-y-1.5">
+                    <nav aria-label="Sidebar Menu" className="space-y-1.5">
                         <SidebarItem icon={BookOpen} label="Dashboard" href="/dashboard" active={pathname === '/dashboard'} />
                         <SidebarItem icon={FileText} label="Study Material" href="/dashboard/study-material" />
                         <SidebarItem icon={Trophy} label="Full Mock Exams" href="/dashboard/tests?type=exam" />
@@ -90,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <SidebarItem icon={History} label="PYQ Practice" href="/dashboard/pyq" />
 
                         <div className="pt-4 mt-4">
-                            <p className="text-[10px] font-extrabold text-slate-400 dark:text-indigo-400/50 uppercase tracking-[0.25em] mb-2 ml-3">Progress</p>
+                            <p className="text-[10px] font-extrabold text-slate-500 dark:text-indigo-300 uppercase tracking-[0.25em] mb-2 ml-3">Progress</p>
                         </div>
                         <SidebarItem icon={TrendingUp} label="My Analytics" href="/dashboard/analytics" />
                         <SidebarItem icon={Medal} label="Leaderboard" href="/dashboard/leaderboard" />
@@ -100,7 +108,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
 
                 <div className="mt-auto p-4 border-t border-slate-100 dark:border-slate-800">
-                    <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200">
+                    <Link href="/dashboard/profile" className="flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200" aria-label="Go to My Profile">
                         <UserAvatar src={user.avatar} name={user.name} size="md" />
                         <div className="flex-1 min-w-0 pr-2">
                             <h4 className="font-bold text-slate-800 dark:text-white text-xs truncate max-w-[130px]">{user.name}</h4>
@@ -114,7 +122,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {!isProfile && (
                 <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800">
                     <div className="max-w-md mx-auto px-5 h-16 flex justify-between items-center">
-                        <Link href="/dashboard/profile" className="flex items-center gap-3 group">
+                        <Link href="/dashboard/profile" className="flex items-center gap-3 group" aria-label="Go to My Profile">
                             <div className="relative">
                                 <UserAvatar src={user.avatar} name={user.name} size="md" />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
@@ -135,13 +143,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <NotificationBell />
             </div>
 
-            {/* Main Content Wrapper */}
-            <div className="lg:pl-[272px] min-h-screen transition-all pb-24 pb-safe lg:pb-0 relative z-10">
+            {/* Main Content Landmark Wrapper */}
+            <main id="main-content" tabIndex={-1} className="lg:pl-[272px] min-h-screen transition-all pb-24 pb-safe lg:pb-0 relative z-10 outline-none">
                 {children}
-            </div>
+            </main>
 
             {/* Mobile Bottom Navigation */}
             <MobileBottomNav />
         </div>
     );
+
 }

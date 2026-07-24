@@ -37,9 +37,10 @@ export const viewport = {
   themeColor: "#4f46e5",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
+
 
 // Theme init script — runs before React hydrates to prevent flash of wrong theme.
 // This is a static, hardcoded string (no user input). Safe from XSS.

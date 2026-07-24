@@ -162,10 +162,11 @@ export default function Dashboard() {
 
                     {/* Today's Focus Action Section */}
                     <div>
-                        <h2 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <h2 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Target className="w-4 h-4 text-indigo-500" />
                             Today's Action Plan
                         </h2>
+
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {/* 1. Daily Speed Quiz Card */}
