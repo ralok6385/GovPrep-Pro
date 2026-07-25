@@ -165,6 +165,77 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    {/* Top Executive KPI Metric Strip (Physics Wallah / Testbook Tier) */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                <FileText className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tests Taken</p>
+                                <p className="text-lg font-black text-slate-900 dark:text-white">{stats?.totalTests || 0}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                <TrendingUp className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Accuracy</p>
+                                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{stats?.avgAccuracy ? Math.round(stats.avgAccuracy) : 0}%</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                <BarChart2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">All-India Rank</p>
+                                <p className="text-lg font-black text-amber-600 dark:text-amber-400">#{stats?.rank || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                <Flame className="w-5 h-5 fill-current" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Study Streak</p>
+                                <p className="text-lg font-black text-orange-600 dark:text-orange-400">{user?.streak || 0} Days</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Live All-India Exam Alert Card */}
+                    <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 p-4 rounded-2xl border border-indigo-800 shadow-md text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping absolute top-0 right-0"></div>
+                                <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 font-bold">
+                                    <Trophy className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-red-500/30 text-red-300 text-[9px] font-black px-2 py-0.5 rounded border border-red-500/40 uppercase">LIVE NOW</span>
+                                    <span className="text-xs text-indigo-300 font-semibold">TCS Exam Pattern</span>
+                                </div>
+                                <h3 className="text-sm font-bold text-white mt-0.5">All-India RRB NTPC CBT-1 Mega Mock Test #12</h3>
+                                <p className="text-[11px] text-slate-300 font-medium">100 Questions • 90 Mins • 5,420 Aspirants Active</p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => router.push('/dashboard/tests?type=exam')}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all shrink-0"
+                        >
+                            Enter Live Exam <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
+
                     {/* Action Hub (3 Columns) */}
                     <div>
                         <h2 className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
