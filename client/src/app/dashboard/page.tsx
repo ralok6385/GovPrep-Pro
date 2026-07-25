@@ -11,7 +11,9 @@ import {
     CalendarDays, X, ShieldCheck, CheckCircle2, Flame, Award, BarChart2
 } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { motion } from 'framer-motion';
 import ExamCategories from '@/components/Dashboard/ExamCategories';
+
 import StreakWidget from '@/components/Dashboard/StreakWidget';
 import LeaderboardTicker from '@/components/Dashboard/LeaderboardTicker';
 import WeaknessHeatmap from '@/components/Dashboard/WeaknessHeatmap';
@@ -133,7 +135,12 @@ export default function Dashboard() {
                     <LeaderboardTicker />
 
                     {/* Enterprise Hero Banner */}
-                    <div className="bg-slate-900 dark:bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="bg-slate-900 dark:bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+                    >
                         <div className="flex items-center gap-4 z-10">
                             <UserAvatar src={user.avatar} name={user.name} size="lg" />
                             <div>
@@ -155,19 +162,21 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex items-center gap-3 w-full md:w-auto z-10">
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.04 }}
+                                whileTap={{ scale: 0.96 }}
                                 onClick={() => router.push('/dashboard/tests?type=exam')}
                                 className="w-full md:w-auto px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all shrink-0"
                             >
                                 <Trophy className="w-4 h-4" />
                                 Start All-India Mock
-                            </button>
+                            </motion.button>
                         </div>
-                    </div>
+                    </motion.div>
 
                     {/* Top Executive KPI Metric Strip (Physics Wallah / Testbook Tier) */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
                                 <FileText className="w-5 h-5" />
                             </div>
@@ -175,9 +184,9 @@ export default function Dashboard() {
                                 <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tests Taken</p>
                                 <p className="text-lg font-black text-slate-900 dark:text-white">{stats?.totalTests || 0}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
                                 <TrendingUp className="w-5 h-5" />
                             </div>
@@ -185,9 +194,9 @@ export default function Dashboard() {
                                 <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Accuracy</p>
                                 <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{stats?.avgAccuracy ? Math.round(stats.avgAccuracy) : 0}%</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
                                 <BarChart2 className="w-5 h-5" />
                             </div>
@@ -195,9 +204,9 @@ export default function Dashboard() {
                                 <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">All-India Rank</p>
                                 <p className="text-lg font-black text-amber-600 dark:text-amber-400">#{stats?.rank || 'N/A'}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
+                        <motion.div whileHover={{ scale: 1.02, y: -2 }} transition={{ duration: 0.2 }} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold text-xs shrink-0">
                                 <Flame className="w-5 h-5 fill-current" />
                             </div>
@@ -205,8 +214,9 @@ export default function Dashboard() {
                                 <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Study Streak</p>
                                 <p className="text-lg font-black text-orange-600 dark:text-orange-400">{user?.streak || 0} Days</p>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
+
 
                     {/* Live All-India Exam Alert Card */}
                     <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 p-4 rounded-2xl border border-indigo-800 shadow-md text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
