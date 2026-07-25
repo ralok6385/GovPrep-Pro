@@ -136,52 +136,51 @@ export default function ResultsPage() {
     if (!stats && !loading) return <div className="p-8 text-center bg-slate-50 min-h-screen pt-20 font-bold text-slate-400">Failed to connect to analytics server.</div>;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 pb-32">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3 tracking-tight">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                            <BarChart2 className="w-6 h-6 text-white" />
-                        </div>
-                        Results & Analytics
+                    <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <BarChart2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /> Exam Results & Analytics
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1.5 font-medium ml-1">Monitor student performance and exam metrics.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Monitor student exam submissions, scores, and accuracy metrics.</p>
                 </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
-                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Users className="w-7 h-7 text-indigo-600" />
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Total Attempts</p>
-                        <p className="text-3xl font-black text-slate-800">{stats?.totalTests || 0}</p>
+                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Total Attempts</p>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{stats?.totalTests || 0}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                        <Users className="w-5 h-5" />
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
-                    <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <TrendingUp className="w-7 h-7 text-emerald-600" />
-                    </div>
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Avg. Score</p>
-                        <p className="text-3xl font-black text-slate-800">{stats?.avgScore || 0}</p>
+                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Average Score</p>
+                        <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats?.avgScore || 0}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                        <TrendingUp className="w-5 h-5" />
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
-                    <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Clock className="w-7 h-7 text-amber-600" />
-                    </div>
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center justify-between">
                     <div>
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Last Activity</p>
-                        <p className="text-xl font-black text-slate-800">
-                            {filteredResults.length > 0 ? new Date(filteredResults[0].createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
-                        </p>
+                        <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Last Activity</p>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white">
+                            {stats?.lastActivity ? new Date(stats.lastActivity).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Today'}
+                        </h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                        <Clock className="w-5 h-5" />
                     </div>
                 </div>
+
             </div>
 
             {/* Filtering & Table Section */}
