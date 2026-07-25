@@ -7,12 +7,14 @@ import { BookOpen, Play, Zap, Trophy, FileText, Sparkles, TrendingUp, Medal, Boo
 import MobileBottomNav from '@/components/Layout/MobileBottomNav';
 import NotificationBell from '@/components/Dashboard/NotificationBell';
 import UserAvatar from '@/components/UserAvatar';
+import ExamGoalSelector from '@/components/Dashboard/ExamGoalSelector';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
+
 
     const SidebarItem = ({ icon: Icon, label, href, active = false }: any) => {
         const isActive = active || (pathname === href) || (pathname.startsWith(href) && href !== '/dashboard');
@@ -119,29 +121,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </aside>
 
             {/* Mobile Header */}
+
             {!isProfile && (
                 <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800">
-                    <div className="max-w-md mx-auto px-5 h-16 flex justify-between items-center">
-                        <Link href="/dashboard/profile" className="flex items-center gap-3 group" aria-label="Go to My Profile">
+                    <div className="max-w-md mx-auto px-4 h-16 flex justify-between items-center gap-2">
+                        <Link href="/dashboard/profile" className="flex items-center gap-2.5 group" aria-label="Go to My Profile">
                             <div className="relative">
                                 <UserAvatar src={user.avatar} name={user.name} size="md" />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full"></div>
                             </div>
-                            <div>
-                                <p className="text-[10px] text-slate-500 font-medium">Welcome back,</p>
-                                <h1 className="text-xs font-bold text-slate-900 dark:text-white leading-none">{user.name.split(' ')[0]}</h1>
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-slate-500 font-medium leading-none">Welcome back,</p>
+                                <h1 className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">{user.name.split(' ')[0]}</h1>
                             </div>
                         </Link>
 
-                        <NotificationBell />
+                        <div className="flex items-center gap-2">
+                            <ExamGoalSelector />
+                            <NotificationBell />
+                        </div>
                     </div>
                 </header>
             )}
 
-            {/* Desktop Header Notification Bell */}
-            <div className="hidden lg:flex fixed top-4 right-8 z-50">
+            {/* Desktop Header Top Right Strip */}
+            <div className="hidden lg:flex fixed top-4 right-8 z-50 items-center gap-3">
+                <ExamGoalSelector />
                 <NotificationBell />
             </div>
+
 
             {/* Main Content Landmark Wrapper */}
             <main id="main-content" tabIndex={-1} className="lg:pl-[272px] min-h-screen transition-all pb-24 pb-safe lg:pb-0 relative z-10 outline-none">

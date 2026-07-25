@@ -183,20 +183,19 @@ export default function LecturesPage() {
                                                 </h3>
                                             </a>
 
-                                            <div className="flex flex-col text-[12px] text-slate-500 dark:text-slate-400 font-medium">
-                                                <span>
-                                                    {video.subjectId?.name || 'General Preparation'}
+                                            <div className="flex flex-col text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                                <span className="font-bold text-slate-700 dark:text-slate-300">
+                                                    By Er. Alok Sir • {video.subjectId?.name || 'General Preparation'}
                                                 </span>
-                                                <div className="flex items-center justify-between mt-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span>Views</span>
-                                                        <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span>
-                                                        <span>
-                                                            {video.createdAt ? formatDistanceToNow(new Date(video.createdAt), { addSuffix: true }) : 'Added recently'}
-                                                        </span>
-                                                    </div>
+                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                                                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">14.2k Aspirants Watched</span>
+                                                    <span>•</span>
+                                                    <span>
+                                                        {video.createdAt ? formatDistanceToNow(new Date(video.createdAt), { addSuffix: true }) : 'Added recently'}
+                                                    </span>
                                                 </div>
                                             </div>
+
                                             {(video.processingStatus === 'completed' || video.processingStatus === 'processing' || !video.processingStatus) && (
                                                 <button
                                                     onClick={(e) => {

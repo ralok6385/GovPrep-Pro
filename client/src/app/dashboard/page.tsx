@@ -377,7 +377,7 @@ export default function Dashboard() {
                                             <span className="font-bold text-slate-800 dark:text-slate-200 text-xs line-clamp-1 group-hover:text-indigo-600 transition-colors">
                                                 {subj.name}
                                             </span>
-                                            <p className="text-[10px] text-slate-500 font-medium">Practice & Notes</p>
+                                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">18 Chapters • 45 PDF Notes</p>
                                         </div>
                                     </Link>
                                 ))}
@@ -458,11 +458,12 @@ export default function Dashboard() {
 
                                             <div className="flex-1 min-w-0">
                                                 <span className="text-indigo-600 dark:text-indigo-400 text-[9px] font-black uppercase tracking-wider block">
-                                                    {(video as any).subjectId?.name || 'General'}
+                                                    By Er. Alok Sir
                                                 </span>
                                                 <h3 className="font-bold text-slate-800 dark:text-white text-xs line-clamp-1 group-hover:text-indigo-600 transition-colors">
                                                     {video.title}
                                                 </h3>
+                                                <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium">14.2k Aspirants Watched</p>
                                             </div>
                                         </button>
                                     );
@@ -474,6 +475,7 @@ export default function Dashboard() {
                             )}
                         </div>
                     </div>
+
 
                 </div>
 
